@@ -9,7 +9,7 @@ cd BikesGPManager
 
 ## Setup Project
 
-Buat project React menggunakan Vite:
+Create the React project using Vite:
 
 ```bash
 npm create vite@latest motogp-manager -- --template react
@@ -36,7 +36,7 @@ npm install electron electron-builder --save-dev
 npm install concurrently --save-dev
 ```
 
-## Menjalankan Project
+## Run Development Server
 
 ```bash
 npm run dev
