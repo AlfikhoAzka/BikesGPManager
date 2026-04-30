@@ -29,14 +29,14 @@ export default function BikeUpgrade() {
 
   function handleUpgrade(upgrade) {
     if (budget < upgrade.cost) {
-      setNotification({ msg: 'Budget tidak cukup!', type: 'error' })
+      setNotification({ msg: 'Budget is not enough!', type: 'error' })
       setTimeout(() => setNotification(null), 2500)
       return
     }
     Object.entries(upgrade.stats).forEach(([stat, amount]) => {
       upgradeBike(stat, amount, upgrade.id === Object.keys(upgrade.stats)[0] ? upgrade.cost : 0)
     })
-    setNotification({ msg: `${upgrade.label} berhasil dipasang!`, type: 'success' })
+    setNotification({ msg: `${upgrade.label} successfully installed!`, type: 'success' })
     setTimeout(() => setNotification(null), 2500)
   }
 
@@ -47,7 +47,7 @@ export default function BikeUpgrade() {
     <div className="space-y-6">
 
       <div>
-        <h2 className="text-lg font-semibold mb-1">Motor & Upgrade</h2>
+        <h2 className="text-lg font-semibold mb-1">Bike & Upgrade</h2>
         <p className="text-sm text-gray-500">{bike.model} · {bike.spec === 'satellite' ? 'Satellite Spec' : 'Factory Spec'}</p>
       </div>
 
@@ -68,7 +68,7 @@ export default function BikeUpgrade() {
             <div className="text-xs text-gray-500 mt-0.5">Overall rating: <span className="text-blue-400 font-semibold">{bikeOverall}/100</span></div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-gray-500">Budget tersisa</div>
+            <div className="text-xs text-gray-500">Remaining Budget</div>
             <div className="text-lg font-semibold text-green-400">€{budget}M</div>
           </div>
         </div>
@@ -95,14 +95,14 @@ export default function BikeUpgrade() {
       <div className="bg-amber-950 border border-amber-800 rounded-xl p-4">
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-sm font-semibold text-amber-300 mb-1">Upgrade ke Factory Spec?</div>
+            <div className="text-sm font-semibold text-amber-300 mb-1">Upgrade to Factory Spec?</div>
             <div className="text-xs text-amber-500 leading-relaxed">
-              Butuh finish P5 atau lebih di {factoryTarget} race berturut-turut + posisi top-4 di kejuaraan.
+              Need to finish in P5 or better in {factoryTarget} consecutive races + top-4 position in the championship.
             </div>
           </div>
           <div className="text-right ml-4">
             <div className="text-2xl font-bold text-amber-300">{factoryProgress}/{factoryTarget}</div>
-            <div className="text-xs text-amber-600">race terpenuhi</div>
+            <div className="text-xs text-amber-600">races completed</div>
           </div>
         </div>
         <div className="mt-3 bg-amber-900 rounded-full h-1.5">
@@ -111,7 +111,7 @@ export default function BikeUpgrade() {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Upgrade tersedia</h3>
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Upgrade available</h3>
         <div className="space-y-3">
           {upgrades.map(upgrade => {
             const bought = alreadyUpgraded.includes(upgrade.id)
@@ -128,7 +128,7 @@ export default function BikeUpgrade() {
                   <div className="text-sm text-gray-400">€{upgrade.cost}M</div>
                   {bought ? (
                     <div className="px-3 py-1.5 rounded-lg bg-green-900 text-green-400 text-xs font-medium">
-                      Terpasang
+                      Installed
                     </div>
                   ) : (
                     <button
@@ -140,7 +140,7 @@ export default function BikeUpgrade() {
                           : 'bg-gray-800 text-gray-600 cursor-not-allowed'
                       }`}
                     >
-                      Beli
+                      Buy
                     </button>
                   )}
                 </div>

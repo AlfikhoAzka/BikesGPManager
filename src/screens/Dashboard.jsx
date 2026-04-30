@@ -32,7 +32,7 @@ function RiderCard({ rider }) {
         </div>
         <div>
           <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>Konsistensi</span><span>{rider.consistency}</span>
+            <span>Consistency</span><span>{rider.consistency}</span>
           </div>
           <StatBar value={rider.consistency} color="bg-blue-500" />
         </div>
@@ -64,16 +64,16 @@ export default function Dashboard() {
     <div className="space-y-6">
 
       <div>
-        <h2 className="text-lg font-semibold mb-1">Overview musim 2025</h2>
-        <p className="text-sm text-gray-500">Round {round} dari 20 · {team.manufacturer} {bike.spec === 'satellite' ? 'Satellite Spec' : 'Factory Spec'}</p>
+        <h2 className="text-lg font-semibold mb-1">Season Overview 2025</h2>
+        <p className="text-sm text-gray-500">Round {round} of 20 · {team.manufacturer} {bike.spec === 'satellite' ? 'Satellite Spec' : 'Factory Spec'}</p>
       </div>
 
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Budget', value: `€${budget}M`, color: 'text-green-400' },
-          { label: 'Posisi kejuaraan', value: '#6', color: 'text-yellow-400' },
-          { label: 'Total poin', value: '87', color: 'text-white' },
-          { label: 'Overall motor', value: bikeOverall, color: 'text-blue-400' },
+          { label: 'Championship Position', value: '#6', color: 'text-yellow-400' },
+          { label: 'Total Points', value: '87', color: 'text-white' },
+          { label: 'Overall Bike', value: bikeOverall, color: 'text-blue-400' },
         ].map(stat => (
           <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="text-xs text-gray-500 mb-1">{stat.label}</div>
@@ -113,7 +113,7 @@ export default function Dashboard() {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Staf teknis</h3>
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Technical Staff</h3>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 grid grid-cols-2 gap-4">
           {Object.entries(staff).map(([role, person]) => (
             <div key={role}>
