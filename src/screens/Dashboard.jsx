@@ -100,7 +100,6 @@ export default function Dashboard() {
             <div className="text-base text-gray-400">Overall Rating</div>
             <div className="flex items-center gap-2">
               <StarRating value={bikeOverall} max={20} size="md" />
-              <span className="text-white font-semibold">{bikeOverall}/20</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-4">
