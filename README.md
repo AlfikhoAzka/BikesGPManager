@@ -58,6 +58,12 @@ npm install electron electron-builder --save-dev
 npm install concurrently --save-dev
 ```
 
+## Install Library Countries
+
+```bash
+npm install i18n-iso-countries
+```
+
 ## Run Development Server
 
 ```bash

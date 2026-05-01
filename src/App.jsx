@@ -10,7 +10,7 @@ import RaceScreen from './screens/RaceScreen'
 import Contracts from './screens/Contracts'
 
 export default function App() {
-  const { manager, initNewGame } = useGameStore()
+  const { manager, initNewGame, resetGame } = useGameStore()
   const [appState, setAppState] = useState(manager ? 'game' : 'menu')
   const [screen, setScreen] = useState('dashboard')
   const [pendingManager, setPendingManager] = useState(null)
@@ -57,11 +57,19 @@ export default function App() {
   }
 
   return (
-    <Layout currentScreen={screen} setScreen={setScreen} onMainMenu={() => setAppState('menu')}>
-      {screen === 'dashboard' && <Dashboard />}
-      {screen === 'bike' && <BikeUpgrade />}
-      {screen === 'race' && <RaceScreen />}
-      {screen === 'contracts' && <Contracts />}
-    </Layout>
-  )
+  <Layout
+    currentScreen={screen}
+    setScreen={setScreen}
+    onMainMenu={() => setAppState('menu')}
+    onNewGame={() => {
+      resetGame()
+      setAppState('create-manager')
+    }}
+  >
+    {screen === 'dashboard' && <Dashboard />}
+    {screen === 'bike' && <BikeUpgrade />}
+    {screen === 'race' && <RaceScreen />}
+    {screen === 'contracts' && <Contracts />}
+  </Layout>
+)
 }

@@ -18,7 +18,7 @@ export default function MainMenu({ onNewGame, onResume }) {
           The Manager Experience
         </div>
         <h1 className="text-6xl font-bold text-white tracking-tight mb-2">
-          MotoGP
+          BikesGP
         </h1>
         <h2 className="text-6xl font-bold text-red-500 tracking-tight">
           Manager

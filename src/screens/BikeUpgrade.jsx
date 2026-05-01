@@ -1,21 +1,14 @@
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import StarRating from '../components/StarRating'
 
 const upgrades = [
-  { id: 'topSpeed', label: 'Seamless gearbox', desc: '+4 top speed, +3 braking', cost: 1.8, stats: { topSpeed: 4, braking: 3 } },
-  { id: 'aero', label: 'New aero winglet kit', desc: '+6 aero, -1 top speed', cost: 2.1, stats: { aero: 6, topSpeed: -1 } },
-  { id: 'electronics', label: 'Bosch electronics v9', desc: '+8 electronics, +2 braking', cost: 3.0, stats: { electronics: 8, braking: 2 } },
-  { id: 'chassis', label: 'Carbon fibre chassis', desc: '+7 chassis rigidity', cost: 2.5, stats: { chassis: 7 } },
-  { id: 'braking', label: 'Brembo brake package', desc: '+5 braking, +2 electronics', cost: 1.5, stats: { braking: 5, electronics: 2 } },
+  { id: 'topSpeed', label: 'Seamless Gearbox', desc: '+4 top speed, +3 braking', cost: 1.8, stats: { topSpeed: 4, braking: 3 } },
+  { id: 'aero', label: 'New Aero Winglet Kit', desc: '+6 aero, -1 top speed', cost: 2.1, stats: { aero: 6, topSpeed: -1 } },
+  { id: 'electronics', label: 'Bosch Electronics v9', desc: '+8 electronics, +2 braking', cost: 3.0, stats: { electronics: 8, braking: 2 } },
+  { id: 'chassis', label: 'Carbon Fibre Chassis', desc: '+7 chassis rigidity', cost: 2.5, stats: { chassis: 7 } },
+  { id: 'braking', label: 'Brembo Brake Package', desc: '+5 braking, +2 electronics', cost: 1.5, stats: { braking: 5, electronics: 2 } },
 ]
-
-function StatBar({ value, color = 'bg-red-500' }) {
-  return (
-    <div className="w-full bg-gray-800 rounded-full h-1.5">
-      <div className={`${color} h-1.5 rounded-full transition-all duration-500`} style={{ width: `${value}%` }} />
-    </div>
-  )
-}
 
 export default function BikeUpgrade() {
   const { bike, budget, upgradeBike } = useGameStore()
@@ -29,14 +22,15 @@ export default function BikeUpgrade() {
 
   function handleUpgrade(upgrade) {
     if (budget < upgrade.cost) {
-      setNotification({ msg: 'Budget is not enough!', type: 'error' })
+      setNotification({ msg: 'Not enough budget!', type: 'error' })
       setTimeout(() => setNotification(null), 2500)
       return
     }
-    Object.entries(upgrade.stats).forEach(([stat, amount]) => {
-      upgradeBike(stat, amount, upgrade.id === Object.keys(upgrade.stats)[0] ? upgrade.cost : 0)
+    const entries = Object.entries(upgrade.stats)
+    entries.forEach(([stat, amount], i) => {
+      upgradeBike(stat, amount, i === 0 ? upgrade.cost : 0)
     })
-    setNotification({ msg: `${upgrade.label} successfully installed!`, type: 'success' })
+    setNotification({ msg: `${upgrade.label} installed successfully!`, type: 'success' })
     setTimeout(() => setNotification(null), 2500)
   }
 
@@ -47,8 +41,8 @@ export default function BikeUpgrade() {
     <div className="space-y-6">
 
       <div>
-        <h2 className="text-lg font-semibold mb-1">Bike & Upgrade</h2>
-        <p className="text-sm text-gray-500">{bike.model} · {bike.spec === 'satellite' ? 'Satellite Spec' : 'Factory Spec'}</p>
+        <h2 className="text-lg font-semibold mb-1">Bike & Upgrades</h2>
+        <p className="text-base text-gray-500">{bike.model} · {bike.spec === 'satellite' ? 'Satellite Spec' : 'Factory Spec'}</p>
       </div>
 
       {notification && (
@@ -62,31 +56,31 @@ export default function BikeUpgrade() {
       )}
 
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <div className="font-semibold text-white">{bike.model}</div>
-            <div className="text-xs text-gray-500 mt-0.5">Overall rating: <span className="text-blue-400 font-semibold">{bikeOverall}/100</span></div>
+            <div className="text-base font-semibold text-white">{bike.model}</div>
+            <div className="text-base text-gray-500 mt-0.5">
+              Overall: <span className="text-blue-400 font-semibold">{bikeOverall}/100</span>
+            </div>
           </div>
           <div className="text-right">
-            <div className="text-xs text-gray-500">Remaining Budget</div>
-            <div className="text-lg font-semibold text-green-400">€{budget}M</div>
+            <div className="text-base text-gray-500 mb-1">Budget remaining</div>
+            <div className="text-xl font-semibold text-green-400">€{budget}M</div>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-5 gap-4">
           {[
-            { label: 'Top speed', value: bike.topSpeed, color: 'bg-red-500' },
-            { label: 'Aero', value: bike.aero, color: 'bg-blue-500' },
-            { label: 'Chassis', value: bike.chassis, color: 'bg-yellow-500' },
-            { label: 'Braking', value: bike.braking, color: 'bg-orange-500' },
-            { label: 'Electronics', value: bike.electronics, color: 'bg-purple-500' },
+            { label: 'Top Speed', value: bike.topSpeed },
+            { label: 'Aero', value: bike.aero },
+            { label: 'Chassis', value: bike.chassis },
+            { label: 'Braking', value: bike.braking },
+            { label: 'Electronics', value: bike.electronics },
           ].map(stat => (
-            <div key={stat.label}>
-              <div className="flex justify-between text-sm mb-1.5">
-                <span className="text-gray-400">{stat.label}</span>
-                <span className="text-white font-medium">{stat.value}/100</span>
-              </div>
-              <StatBar value={stat.value} color={stat.color} />
+            <div key={stat.label} className="bg-gray-800 rounded-xl p-3 flex flex-col gap-2">
+              <div className="text-base text-gray-400">{stat.label}</div>
+              <div className="text-2xl font-bold text-white">{stat.value}</div>
+              <StarRating value={stat.value} size="sm" />
             </div>
           ))}
         </div>
@@ -95,23 +89,23 @@ export default function BikeUpgrade() {
       <div className="bg-amber-950 border border-amber-800 rounded-xl p-4">
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-sm font-semibold text-amber-300 mb-1">Upgrade to Factory Spec?</div>
-            <div className="text-xs text-amber-500 leading-relaxed">
-              Need to finish in P5 or better in {factoryTarget} consecutive races + top-4 position in the championship.
+            <div className="text-base font-semibold text-amber-300 mb-1">Upgrade to Factory Spec?</div>
+            <div className="text-sm text-amber-500 leading-relaxed">
+              Finish P5 or better in {factoryTarget} consecutive races + top-4 in championship.
             </div>
           </div>
           <div className="text-right ml-4">
-            <div className="text-2xl font-bold text-amber-300">{factoryProgress}/{factoryTarget}</div>
-            <div className="text-xs text-amber-600">races completed</div>
+            <div className="text-3xl font-bold text-amber-300">{factoryProgress}/{factoryTarget}</div>
+            <div className="text-sm text-amber-600">races met</div>
           </div>
         </div>
         <div className="mt-3 bg-amber-900 rounded-full h-1.5">
-          <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: `${(factoryProgress/factoryTarget)*100}%` }} />
+          <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: `${(factoryProgress / factoryTarget) * 100}%` }} />
         </div>
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Upgrade available</h3>
+        <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">Available Upgrades</h3>
         <div className="space-y-3">
           {upgrades.map(upgrade => {
             const bought = alreadyUpgraded.includes(upgrade.id)
@@ -121,26 +115,26 @@ export default function BikeUpgrade() {
                 bought ? 'border-green-800 opacity-60' : 'border-gray-800'
               }`}>
                 <div>
-                  <div className="font-medium text-white text-sm">{upgrade.label}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{upgrade.desc}</div>
+                  <div className="text-base font-semibold text-white">{upgrade.label}</div>
+                  <div className="text-sm text-gray-500 mt-0.5">{upgrade.desc}</div>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="text-sm text-gray-400">€{upgrade.cost}M</div>
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  <div className="text-base font-semibold text-gray-300">€{upgrade.cost}M</div>
                   {bought ? (
-                    <div className="px-3 py-1.5 rounded-lg bg-green-900 text-green-400 text-xs font-medium">
+                    <div className="px-4 py-2 rounded-lg bg-green-900 text-green-400 text-sm font-medium">
                       Installed
                     </div>
                   ) : (
                     <button
                       onClick={() => handleUpgrade(upgrade)}
                       disabled={!canAfford}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
                         canAfford
                           ? 'bg-red-600 hover:bg-red-500 text-white'
                           : 'bg-gray-800 text-gray-600 cursor-not-allowed'
                       }`}
                     >
-                      Buy
+                      Purchase
                     </button>
                   )}
                 </div>

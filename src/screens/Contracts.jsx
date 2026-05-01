@@ -102,11 +102,11 @@ export default function Contracts() {
 
       <div>
         <h2 className="text-lg font-semibold mb-1">Contracts & Transfers</h2>
-        <p className="text-sm text-gray-500">Current: {team.name} · {team.manufacturer} · End of season transfers</p>
+        <p className="text-base text-gray-500">Current: {team.name} · {team.manufacturer} · End of season transfers</p>
       </div>
 
       {notification && (
-        <div className={`px-4 py-3 rounded-lg text-sm font-medium ${
+        <div className={`px-4 py-3 rounded-lg text-base font-medium ${
           notification.type === 'success'
             ? 'bg-green-900 border border-green-700 text-green-300'
             : 'bg-red-900 border border-red-700 text-red-300'
@@ -117,16 +117,16 @@ export default function Contracts() {
 
       {acceptedManufacturer && (
         <div className="bg-purple-950 border border-purple-700 rounded-xl p-4">
-          <div className="text-sm font-semibold text-purple-300 mb-1">Contract signed for next season</div>
+          <div className="text-base font-semibold text-purple-300 mb-1">Contract signed for next season</div>
           <div className="text-white font-semibold">{acceptedManufacturer.manufacturer} — {acceptedManufacturer.model}</div>
-          <div className="text-xs text-purple-400 mt-1">
+          <div className="text-sm text-purple-400 mt-1">
             Spec: {SPEC_LABEL[acceptedManufacturer.spec]} · Budget bonus: +€{acceptedManufacturer.budgetBonus}M
           </div>
         </div>
       )}
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Manufacturer Offers — Next Season</h3>
+        <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">Manufacturer Offers — Next Season</h3>
         <div className="grid grid-cols-2 gap-3">
           {MANUFACTURER_OFFERS.map(offer => (
             <div
@@ -142,9 +142,9 @@ export default function Contracts() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <div className="font-semibold text-white">{offer.manufacturer}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{offer.model}</div>
+                  <div className="text-sm text-gray-500 mt-0.5">{offer.model}</div>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded border ${SPEC_COLOR[offer.spec]}`}>
+                <span className={`text-sm px-2 py-0.5 rounded border ${SPEC_COLOR[offer.spec]}`}>
                   {SPEC_LABEL[offer.spec]}
                 </span>
               </div>
@@ -152,21 +152,21 @@ export default function Contracts() {
               <div className="grid grid-cols-5 gap-1 mb-3">
                 {Object.entries(offer.bikeStats).map(([stat, val]) => (
                   <div key={stat} className="text-center">
-                    <div className="text-xs text-gray-600 mb-1">{stat.replace('topSpeed', 'Spd').replace('electronics', 'Elec').replace('chassis', 'Cha').replace('braking', 'Brk').replace('aero', 'Aero')}</div>
-                    <div className="text-sm font-semibold text-white">{val}</div>
+                    <div className="text-base text-gray-400 mb-1">{stat.replace('topSpeed', 'Spd').replace('electronics', 'Elec').replace('chassis', 'Cha').replace('braking', 'Brk').replace('aero', 'Aero')}</div>
+                    <div className="text-lg font-semibold text-white">{val}</div>
                   </div>
                 ))}
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="text-xs text-green-400">+€{offer.budgetBonus}M budget</div>
-                <div className="text-xs text-gray-500">{offer.requirement}</div>
+                <div className="text-sm text-green-400">+€{offer.budgetBonus}M budget</div>
+                <div className="text-sm text-gray-500">{offer.requirement}</div>
               </div>
 
               {selectedOffer?.id === offer.id && (
                 <button
                   onClick={e => { e.stopPropagation(); acceptManufacturer(offer) }}
-                  className="mt-3 w-full bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-sm font-semibold transition-colors"
+                  className="mt-3 w-full bg-red-600 hover:bg-red-500 text-white py-2 rounded-lg text-base font-semibold transition-colors"
                 >
                   Accept for Next Season
                 </button>
@@ -177,7 +177,7 @@ export default function Contracts() {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Current Riders</h3>
+        <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">Current Riders</h3>
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           {riders.map((r, i) => (
             <div key={r.id} className={`flex items-center gap-4 px-4 py-3 ${i < riders.length - 1 ? 'border-b border-gray-800' : ''}`}>
@@ -185,12 +185,12 @@ export default function Contracts() {
                 #{r.number}
               </div>
               <div className="flex-1">
-                <div className="font-medium text-white text-sm">{r.name}</div>
-                <div className="text-xs text-gray-500">Overall {r.overall} · Contract: {r.contractYears} yr remaining</div>
+                <div className="font-medium text-white text-base">{r.name}</div>
+                <div className="text-sm text-gray-500">Overall {r.overall} · Contract: {r.contractYears} yr remaining</div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold text-white">€{r.salary}M/yr</div>
-                <div className={`text-xs ${r.contractYears <= 1 ? 'text-red-400' : 'text-green-400'}`}>
+                <div className="text-base font-semibold text-white">€{r.salary}M/yr</div>
+                <div className={`text-sm ${r.contractYears <= 1 ? 'text-red-400' : 'text-green-400'}`}>
                   {r.contractYears <= 1 ? 'Expiring' : 'Contracted'}
                 </div>
               </div>
@@ -200,7 +200,7 @@ export default function Contracts() {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Free Agents</h3>
+        <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">Free Agents</h3>
         <div className="space-y-3">
           {FREE_AGENTS.map(rider => {
             const signed = signedRiders.includes(rider.id)
@@ -213,19 +213,19 @@ export default function Contracts() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white text-sm">{rider.name}</span>
+                      <span className="font-medium text-white text-base">{rider.name}</span>
                       {rider.moto2 && <span className="text-xs bg-blue-900 text-blue-300 px-1.5 py-0.5 rounded">Moto2 Promotion</span>}
                     </div>
-                    <div className="text-xs text-gray-500">{rider.nationality} · Overall {rider.overall} · Pace {rider.pace}</div>
+                    <div className="text-sm text-gray-500">{rider.nationality} · Overall {rider.overall} · Pace {rider.pace}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-white">€{rider.salary}M/yr</div>
+                    <div className="text-base font-semibold text-white">€{rider.salary}M/yr</div>
                     {signed ? (
-                      <div className="text-xs text-green-400 font-medium">Signed</div>
+                      <div className="text-sm text-green-400 font-medium">Signed</div>
                     ) : (
                       <button
                         onClick={() => setNegotiating(isNegotiating ? null : rider.id)}
-                        className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded-lg transition-colors mt-1"
+                        className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded-lg transition-colors mt-1"
                       >
                         {isNegotiating ? 'Cancel' : 'Negotiate'}
                       </button>
@@ -235,14 +235,14 @@ export default function Contracts() {
 
                 {isNegotiating && !signed && (
                   <div className="mt-3 pt-3 border-t border-gray-800 flex items-center justify-between">
-                    <div className="text-xs text-gray-400">
+                    <div className="text-sm text-gray-400">
                       Signing fee: <span className="text-white font-medium">€{rider.salary}M</span> deducted from budget.
                       Current budget: <span className="text-green-400 font-medium">€{budget}M</span>
                     </div>
                     <button
                       onClick={() => signRider(rider)}
                       disabled={budget < rider.salary}
-                      className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                      className={`px-4 py-1.5 rounded-lg text-base font-semibold transition-colors ${
                         budget >= rider.salary
                           ? 'bg-red-600 hover:bg-red-500 text-white'
                           : 'bg-gray-800 text-gray-600 cursor-not-allowed'

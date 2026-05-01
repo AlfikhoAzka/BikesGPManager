@@ -1,60 +1,45 @@
 import { useGameStore } from '../store/gameStore'
-
-function StatBar({ value, max = 100, color = 'bg-red-500' }) {
-  return (
-    <div className="w-full bg-gray-800 rounded-full h-1.5">
-      <div
-        className={`${color} h-1.5 rounded-full transition-all`}
-        style={{ width: `${(value / max) * 100}%` }}
-      />
-    </div>
-  )
-}
+import StarRating from '../components/StarRating'
 
 function RiderCard({ rider }) {
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-content-center text-sm font-bold flex items-center justify-center">
+        <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-sm font-bold">
           #{rider.number}
         </div>
         <div>
           <div className="font-semibold text-white">{rider.name}</div>
-          <div className="text-xs text-gray-500">Overall {rider.overall} · Kontrak {rider.contractYears} thn · €{rider.salary}M/thn</div>
+          <div className="text-base text-gray-500">
+            Contract: {rider.contractYears} yr · €{rider.salary}M/yr
+          </div>
+        </div>
+        <div className="ml-auto text-right">
+          <div className="text-base text-gray-500 mb-1">Overall</div>
+          <StarRating value={rider.overall} size="md" />
         </div>
       </div>
-      <div className="space-y-2">
-        <div>
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>Pace</span><span>{rider.pace}</span>
+
+      <div className="space-y-2.5">
+        {[
+          { label: 'Pace', value: rider.pace },
+          { label: 'Consistency', value: rider.consistency },
+          { label: 'Wet Skill', value: rider.wetSkill },
+          { label: 'Mental', value: rider.mentalState },
+          { label: 'Fitness', value: rider.fitness },
+        ].map(stat => (
+          <div key={stat.label} className="flex items-center justify-between">
+            <span className="text-base text-gray-400">{stat.label}</span>
+            <StarRating value={stat.value} size="md" />
           </div>
-          <StatBar value={rider.pace} color="bg-red-500" />
-        </div>
-        <div>
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>Consistency</span><span>{rider.consistency}</span>
-          </div>
-          <StatBar value={rider.consistency} color="bg-blue-500" />
-        </div>
-        <div>
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>Wet skill</span><span>{rider.wetSkill}</span>
-          </div>
-          <StatBar value={rider.wetSkill} color="bg-cyan-500" />
-        </div>
-        <div>
-          <div className="flex justify-between text-xs text-gray-400 mb-1">
-            <span>Mental</span><span>{rider.mentalState}</span>
-          </div>
-          <StatBar value={rider.mentalState} color="bg-yellow-500" />
-        </div>
+        ))}
       </div>
     </div>
   )
 }
 
 export default function Dashboard() {
-  const { team, budget, riders, bike, staff, round } = useGameStore()
+  const { team, budget, riders, bike, staff, round, season, manager, championshipPoints, championshipPosition } = useGameStore()
 
   const bikeOverall = Math.round(
     (bike.topSpeed + bike.aero + bike.chassis + bike.braking + bike.electronics) / 5
@@ -63,27 +48,42 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
 
-      <div>
-        <h2 className="text-lg font-semibold mb-1">Season Overview 2025</h2>
-        <p className="text-sm text-gray-500">Round {round} of 20 · {team.manufacturer} {bike.spec === 'satellite' ? 'Satellite Spec' : 'Factory Spec'}</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold mb-1">Dashboard</h2>
+          <p className="text-sm text-gray-500">
+            Round {round}/20 · {team.manufacturer} {bike.spec === 'satellite' ? 'Satellite' : 'Factory'} · Season {season}
+          </p>
+        </div>
+        {manager && (
+          <div className="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2">
+            <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-xs font-bold">
+              {manager.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+            </div>
+            <div>
+              <div className="text-base font-medium text-white">{manager.name}</div>
+              <div className="text-sm text-gray-500">{manager.nationality} · Team Manager</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Budget', value: `€${budget}M`, color: 'text-green-400' },
-          { label: 'Championship Position', value: '#6', color: 'text-yellow-400' },
-          { label: 'Total Points', value: '87', color: 'text-white' },
-          { label: 'Overall Bike', value: bikeOverall, color: 'text-blue-400' },
+          { label: 'Championship', value: `P${championshipPosition ?? 20}`, color: 'text-yellow-400' },
+          { label: 'Points', value: championshipPoints ?? 0, color: 'text-white' },
+          { label: 'Bike Overall', value: bikeOverall, color: 'text-blue-400' },
         ].map(stat => (
           <div key={stat.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-            <div className="text-xs text-gray-500 mb-1">{stat.label}</div>
+            <div className="text-base text-gray-500 mb-1">{stat.label}</div>
             <div className={`text-2xl font-semibold ${stat.color}`}>{stat.value}</div>
           </div>
         ))}
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Rider</h3>
+        <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">Riders</h3>
         <div className="grid grid-cols-2 gap-4">
           {riders.map(rider => (
             <RiderCard key={rider.id} rider={rider} />
@@ -92,20 +92,29 @@ export default function Dashboard() {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Motor — {bike.model}</h3>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">
+          Bike — {bike.model}
+        </h3>
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-base text-gray-400">Overall Rating</div>
+            <div className="flex items-center gap-2">
+              <StarRating value={bikeOverall} size="md" />
+              <span className="text-white font-semibold">{bikeOverall}/100</span>
+            </div>
+          </div>
           <div className="grid grid-cols-5 gap-4">
             {[
-              { label: 'Top speed', value: bike.topSpeed },
+              { label: 'Top Speed', value: bike.topSpeed },
               { label: 'Aero', value: bike.aero },
               { label: 'Chassis', value: bike.chassis },
               { label: 'Braking', value: bike.braking },
               { label: 'Electronics', value: bike.electronics },
             ].map(stat => (
-              <div key={stat.label}>
-                <div className="text-xs text-gray-500 mb-2">{stat.label}</div>
-                <div className="text-xl font-semibold text-white mb-2">{stat.value}</div>
-                <StatBar value={stat.value} color="bg-red-500" />
+              <div key={stat.label} className="bg-gray-800 rounded-xl p-3 flex flex-col gap-2">
+                <div className="text-base text-gray-400">{stat.label}</div>
+                <div className="text-2xl font-bold text-white">{stat.value}</div>
+                <StarRating value={stat.value} size="md" />
               </div>
             ))}
           </div>
@@ -113,15 +122,18 @@ export default function Dashboard() {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Technical Staff</h3>
+        <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">Technical Staff</h3>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 grid grid-cols-2 gap-4">
           {Object.entries(staff).map(([role, person]) => (
-            <div key={role}>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-400 capitalize">{role.replace(/([A-Z])/g, ' $1')}</span>
-                <span className="text-white font-medium">{person.name}</span>
+            <div key={role} className="flex items-center justify-between">
+              <div>
+                <div className="text-base text-gray-500 capitalize mb-1">
+                  {role.replace(/([A-Z])/g, ' $1')}
+                </div>
+                <div className="text-base font-medium text-white">{person.name}</div>
+                <StarRating value={person.skill} size="md" />
               </div>
-              <StatBar value={person.skill} color="bg-purple-500" />
+              <div className="text-3xl font-bold text-gray-700">{person.skill}</div>
             </div>
           ))}
         </div>

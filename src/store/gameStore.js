@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'
 export const useGameStore = create(
   persist(
     (set, get) => ({
+      manager: null,
       season: 2025,
       round: 1,
       budget: 14.2,
@@ -91,7 +92,6 @@ export const useGameStore = create(
       }),
 
       initNewGame: (manager, team) => set({
-        manager: null,
         season: 2025,
         round: 1,
         budget: team.budget,
@@ -145,7 +145,7 @@ export const useGameStore = create(
       }),
     }),
     {
-      name: 'motogp-manager-save',
+      name: 'bikesgp-manager-save',
     }
   )
 )
