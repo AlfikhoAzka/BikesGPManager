@@ -60,6 +60,46 @@ function formatDate(iso) {
   return d.toLocaleDateString([], { day: 'numeric', month: 'short' })
 }
 
+function getOpeners(contact) {
+  if (contact.type === 'rider') {
+    return [
+      `Hey ${contact.name}, excited to work with you this season. What are your goals?`,
+      `${contact.name}, how are you feeling about the bike setup so far?`,
+      `Let's talk about your contract situation — I want to keep you long term.`,
+      `${contact.name}, I want to discuss your performance targets for this season.`,
+    ]
+  }
+  if (contact.type === 'staff') {
+    return [
+      `${contact.name}, what's your assessment of the bike's current setup?`,
+      `I'd like your honest opinion on where we can improve this season.`,
+      `Can you walk me through the data from our last race?`,
+      `What upgrades do you think should be our top priority?`,
+    ]
+  }
+  return [`Hi ${contact.name}, how can I help?`]
+}
+
+function getOpenerResponse(contact) {
+  if (contact.type === 'rider') {
+    return [
+      "Thanks for reaching out! I'm really motivated this season. The bike feels good and I think we can fight for podiums.",
+      "Honestly, I think we have real potential this year. I just need consistent support from the team.",
+      "I appreciate you saying that. Contract security would really help me focus fully on the racing.",
+      "My goal is simple — top 5 in the championship. I believe we can do it with the right upgrades.",
+    ]
+  }
+  if (contact.type === 'staff') {
+    return [
+      "Glad you asked. I have some ideas that could shave a few tenths off our lap time.",
+      "The data shows we're losing time in the braking zones. I have a plan to address that.",
+      "Honestly, the electronics package needs an upgrade. It's holding us back on corner exit.",
+      "I'll prepare a full report. In short — suspension and aero are our biggest areas to improve.",
+    ]
+  }
+  return ["Thanks for getting in touch!"]
+}
+
 export default function Messages() {
   const { messages, chats, riders, staff, markMessageRead, markAllRead, addChatMessage, replyChat, unreadCount } = useGameStore()
 
@@ -82,7 +122,12 @@ export default function Messages() {
     ...Object.entries(staff).map(([role, p]) => ({
       id: `staff_${role}`,
       name: p.name,
-      role: role.replace(/([A-Z])/g, ' $1'),
+      role: function formatRole(role) {
+              return role
+                .replace(/([A-Z])/g, ' $1')
+                .trim()
+                .replace(/\b\w/g, c => c.toUpperCase())
+            },
       type: 'staff',
       avatar: '🔧',
     })),
@@ -368,8 +413,29 @@ export default function Messages() {
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {contactChat.length === 0 && (
-                    <div className="text-center text-gray-600 text-base py-8">
-                      Start a conversation with {selectedContact.name}
+                    <div className="flex flex-col items-center justify-center h-full py-8 gap-4">
+                      <div className="text-gray-500 text-base">Start a conversation with {selectedContact.name}</div>
+                      <div className="text-sm text-gray-600 mb-2">Suggested openers:</div>
+                      <div className="flex flex-col gap-2 w-full max-w-sm">
+                        {getOpeners(selectedContact).map((opener, i) => (
+                          <button
+                            key={i}
+                            onClick={() => {
+                              replyChat(selectedContact.id, opener)
+                              setTimeout(() => {
+                                const responses = getOpenerResponse(selectedContact)
+                                addChatMessage(selectedContact.id, {
+                                  from: selectedContact.id,
+                                  text: responses[Math.floor(Math.random() * responses.length)],
+                                })
+                              }, 1000 + Math.random() * 800)
+                            }}
+                            className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white px-4 py-3 rounded-xl text-base text-left transition-colors"
+                          >
+                            {opener}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {contactChat.map(msg => {
