@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import StarRating from '../components/StarRating'
 
 const TEAMS = [
   {
@@ -9,9 +10,9 @@ const TEAMS = [
     budget: 14.2,
     difficulty: 'Medium',
     diffColor: 'text-yellow-400',
-    bike: { topSpeed: 82, aero: 75, chassis: 78, braking: 80, electronics: 71 },
+    bike: { topSpeed: 16, aero: 14, chassis: 15, braking: 15, electronics: 13 },
     riders: ['Fabio Q.', 'Alex E.'],
-    description: 'Valentino Rossi\'s satellite team. Strong Ducati base, room to grow.',
+    description: "Valentino Rossi's satellite team. Strong Ducati base, room to grow.",
   },
   {
     id: 'pramac',
@@ -21,7 +22,7 @@ const TEAMS = [
     budget: 16.5,
     difficulty: 'Medium',
     diffColor: 'text-yellow-400',
-    bike: { topSpeed: 85, aero: 80, chassis: 81, braking: 83, electronics: 79 },
+    bike: { topSpeed: 17, aero: 15, chassis: 16, braking: 16, electronics: 15 },
     riders: ['Jorge M.', 'Franco M.'],
     description: 'Well-funded satellite team with near-factory spec Ducati.',
   },
@@ -33,7 +34,7 @@ const TEAMS = [
     budget: 13.0,
     difficulty: 'Hard',
     diffColor: 'text-red-400',
-    bike: { topSpeed: 80, aero: 78, chassis: 76, braking: 79, electronics: 75 },
+    bike: { topSpeed: 15, aero: 14, chassis: 14, braking: 14, electronics: 13 },
     riders: ['M. Oliveira', 'R. Fernandez'],
     description: 'American-owned team. Aprilia satellite with development potential.',
   },
@@ -45,7 +46,7 @@ const TEAMS = [
     budget: 12.5,
     difficulty: 'Very Hard',
     diffColor: 'text-red-600',
-    bike: { topSpeed: 78, aero: 72, chassis: 74, braking: 76, electronics: 70 },
+    bike: { topSpeed: 14, aero: 13, chassis: 13, braking: 14, electronics: 12 },
     riders: ['A. Rins', 'T. Nakagami'],
     description: 'Honda satellite during a rebuilding phase. High challenge, high reward.',
   },
@@ -57,9 +58,9 @@ const TEAMS = [
     budget: 13.8,
     difficulty: 'Hard',
     diffColor: 'text-red-400',
-    bike: { topSpeed: 81, aero: 76, chassis: 79, braking: 78, electronics: 74 },
+    bike: { topSpeed: 15, aero: 14, chassis: 15, braking: 14, electronics: 13 },
     riders: ['P. Acosta', 'A. Fernandez'],
-    description: 'KTM\'s development team. Good R&D access and young talent pipeline.',
+    description: "KTM's development team. Good R&D access and young talent pipeline.",
   },
   {
     id: 'gresini',
@@ -69,24 +70,12 @@ const TEAMS = [
     budget: 11.0,
     difficulty: 'Hard',
     diffColor: 'text-red-400',
-    bike: { topSpeed: 83, aero: 77, chassis: 79, braking: 81, electronics: 76 },
+    bike: { topSpeed: 16, aero: 14, chassis: 15, braking: 15, electronics: 14 },
     riders: ['M. Marquez', 'A. Marquez'],
     description: 'Independent team with older Ducati spec. Strong rider lineup.',
   },
 ]
 
-function StarRating({ value, max = 100 }) {
-  const stars = Math.round((value / max) * 5)
-  return (
-    <div className="flex gap-0.5">
-      {[1,2,3,4,5].map(i => (
-        <svg key={i} className={`w-3 h-3 ${i <= stars ? 'text-yellow-400' : 'text-gray-700'}`} fill="currentColor" viewBox="0 0 20 20">
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-        </svg>
-      ))}
-    </div>
-  )
-}
 
 export default function TeamSelection({ onConfirm, onBack }) {
   const [selected, setSelected] = useState(null)
@@ -133,7 +122,7 @@ export default function TeamSelection({ onConfirm, onBack }) {
                       {stat === 'topSpeed' ? 'Spd' : stat === 'electronics' ? 'Elec' : stat === 'chassis' ? 'Cha' : stat === 'braking' ? 'Brk' : 'Aero'}
                     </div>
                     <div className="text-sm font-semibold text-white">{val}</div>
-                    <StarRating value={val} />
+                    <StarRating value={val} max={20} size="md" />
                   </div>
                 ))}
               </div>

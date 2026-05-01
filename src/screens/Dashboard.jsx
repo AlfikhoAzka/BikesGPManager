@@ -16,7 +16,7 @@ function RiderCard({ rider }) {
         </div>
         <div className="ml-auto text-right">
           <div className="text-base text-gray-500 mb-1">Overall</div>
-          <StarRating value={rider.overall} size="md" />
+          <StarRating value={rider.overall} max={20} size="md" />
         </div>
       </div>
 
@@ -30,7 +30,7 @@ function RiderCard({ rider }) {
         ].map(stat => (
           <div key={stat.label} className="flex items-center justify-between">
             <span className="text-base text-gray-400">{stat.label}</span>
-            <StarRating value={stat.value} size="md" />
+            <StarRating value={stat.value} max={20} size="md" />
           </div>
         ))}
       </div>
@@ -99,8 +99,8 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div className="text-base text-gray-400">Overall Rating</div>
             <div className="flex items-center gap-2">
-              <StarRating value={bikeOverall} size="md" />
-              <span className="text-white font-semibold">{bikeOverall}/100</span>
+              <StarRating value={bikeOverall} max={20} size="md" />
+              <span className="text-white font-semibold">{bikeOverall}/20</span>
             </div>
           </div>
           <div className="grid grid-cols-5 gap-4">
@@ -114,7 +114,7 @@ export default function Dashboard() {
               <div key={stat.label} className="bg-gray-800 rounded-xl p-3 flex flex-col gap-2">
                 <div className="text-base text-gray-400">{stat.label}</div>
                 <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <StarRating value={stat.value} size="md" />
+                <StarRating value={stat.value} max={20} size="md" />
               </div>
             ))}
           </div>
@@ -131,7 +131,7 @@ export default function Dashboard() {
                   {role.replace(/([A-Z])/g, ' $1')}
                 </div>
                 <div className="text-base font-medium text-white">{person.name}</div>
-                <StarRating value={person.skill} size="md" />
+                <StarRating value={person.skill} max={20} size="md" />
               </div>
               <div className="text-3xl font-bold text-gray-700">{person.skill}</div>
             </div>

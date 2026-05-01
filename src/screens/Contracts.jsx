@@ -8,7 +8,7 @@ const MANUFACTURER_OFFERS = [
     model: 'RS-GP25',
     spec: 'factory',
     budgetBonus: 3.0,
-    bikeStats: { topSpeed: 88, aero: 85, chassis: 87, braking: 86, electronics: 90 },
+    bikeStats: { topSpeed: 18, aero: 17, chassis: 17, braking: 17, electronics: 18 },
     requirement: 'Top 4 in championship',
     available: true,
   },
@@ -18,7 +18,7 @@ const MANUFACTURER_OFFERS = [
     model: 'RC16',
     spec: 'semi-factory',
     budgetBonus: 1.5,
-    bikeStats: { topSpeed: 84, aero: 80, chassis: 83, braking: 82, electronics: 85 },
+    bikeStats: { topSpeed: 16, aero: 15, chassis: 16, braking: 16, electronics: 16 },
     requirement: 'Top 8 in championship',
     available: true,
   },
@@ -28,7 +28,7 @@ const MANUFACTURER_OFFERS = [
     model: 'RC213V',
     spec: 'satellite',
     budgetBonus: 0.5,
-    bikeStats: { topSpeed: 78, aero: 72, chassis: 75, braking: 76, electronics: 70 },
+    bikeStats: { topSpeed: 14, aero: 13, chassis: 14, braking: 14, electronics: 13 },
     requirement: 'No requirement',
     available: true,
   },
@@ -38,17 +38,17 @@ const MANUFACTURER_OFFERS = [
     model: 'Desmosedici GP25',
     spec: 'factory',
     budgetBonus: 4.0,
-    bikeStats: { topSpeed: 95, aero: 92, chassis: 91, braking: 93, electronics: 94 },
+    bikeStats: { topSpeed: 19, aero: 18, chassis: 18, braking: 19, electronics: 19 },
     requirement: 'Win 3 races this season',
     available: false,
   },
 ]
 
 const FREE_AGENTS = [
-  { id: 'fa1', name: 'Jorge M.', number: 99, overall: 85, pace: 87, salary: 4.0, nationality: 'Spanish' },
-  { id: 'fa2', name: 'Raul P.', number: 55, overall: 74, pace: 75, salary: 1.2, nationality: 'Spanish', moto2: true },
-  { id: 'fa3', name: 'Cal C.', number: 35, overall: 77, pace: 78, salary: 2.1, nationality: 'British' },
-  { id: 'fa4', name: 'Taka N.', number: 30, overall: 72, pace: 73, salary: 1.5, nationality: 'Japanese' },
+  { id: 'fa1', name: 'Jorge M.', number: 99, overall: 16, pace: 17, salary: 4.0, nationality: 'Spanish' },
+  { id: 'fa2', name: 'Raul P.', number: 55, overall: 13, pace: 14, salary: 1.2, nationality: 'Spanish', moto2: true },
+  { id: 'fa3', name: 'Cal C.', number: 35, overall: 14, pace: 15, salary: 2.1, nationality: 'British' },
+  { id: 'fa4', name: 'Taka N.', number: 30, overall: 13, pace: 13, salary: 1.5, nationality: 'Japanese' },
 ]
 
 const SPEC_COLOR = {

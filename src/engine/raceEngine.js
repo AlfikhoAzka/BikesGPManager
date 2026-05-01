@@ -12,14 +12,14 @@ const CIRCUITS = [
 ]
 
 const AI_RIDERS = [
-  { name: 'F. Bagnaia', team: 'Ducati Factory', pace: 97, tyre: 'M' },
-  { name: 'J. Martin', team: 'Pramac', pace: 95, tyre: 'M' },
-  { name: 'M. Marquez', team: 'Gresini', pace: 94, tyre: 'S' },
-  { name: 'A. Espargaro', team: 'Aprilia', pace: 91, tyre: 'M' },
-  { name: 'B. Oliveira', team: 'Trackhouse', pace: 89, tyre: 'H' },
-  { name: 'L. Marini', team: 'Honda', pace: 84, tyre: 'M' },
-  { name: 'T. Nakagami', team: 'LCR Honda', pace: 81, tyre: 'M' },
-  { name: 'A. Rins', team: 'Yamaha', pace: 83, tyre: 'S' },
+  { name: 'F. Bagnaia', team: 'Ducati Factory', pace: 19, tyre: 'M' },
+  { name: 'J. Martin', team: 'Pramac', pace: 18, tyre: 'M' },
+  { name: 'M. Marquez', team: 'Gresini', pace: 18, tyre: 'S' },
+  { name: 'A. Espargaro', team: 'Aprilia', pace: 17, tyre: 'M' },
+  { name: 'B. Oliveira', team: 'Trackhouse', pace: 16, tyre: 'H' },
+  { name: 'L. Marini', team: 'Honda', pace: 15, tyre: 'M' },
+  { name: 'T. Nakagami', team: 'LCR Honda', pace: 14, tyre: 'M' },
+  { name: 'A. Rins', team: 'Yamaha', pace: 15, tyre: 'S' },
 ]
 
 const TYRE_DEG = { S: 1.9, M: 1.2, H: 0.7 }
@@ -37,7 +37,7 @@ export function initRace(round, riders, bike, staff) {
 
   const playerRiders = riders.map(r => {
     const bikeOverall = (bike.topSpeed + bike.aero + bike.chassis + bike.braking + bike.electronics) / 5
-    const basePace = (r.pace * 0.6 + bikeOverall * 0.4) / 100
+    const basePace = (r.pace * 0.6 + bikeOverall * 0.4) / 20
     const tyre = 'M'
     return {
       id: r.id,
@@ -57,7 +57,7 @@ export function initRace(round, riders, bike, staff) {
   })
 
   const aiRiders = AI_RIDERS.map(r => {
-    const basePace = r.pace / 100
+    const basePace = r.pace / 20
     return {
       id: r.name,
       name: r.name,

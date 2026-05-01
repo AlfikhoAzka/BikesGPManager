@@ -8,9 +8,10 @@ import Dashboard from './screens/Dashboard'
 import BikeUpgrade from './screens/BikeUpgrade'
 import RaceScreen from './screens/RaceScreen'
 import Contracts from './screens/Contracts'
+import Messages from './screens/Messages'
 
 export default function App() {
-  const { manager, initNewGame, resetGame } = useGameStore()
+  const {manager, initNewGame, resetGame } = useGameStore()
   const [appState, setAppState] = useState(manager ? 'game' : 'menu')
   const [screen, setScreen] = useState('dashboard')
   const [pendingManager, setPendingManager] = useState(null)
@@ -70,6 +71,7 @@ export default function App() {
     {screen === 'bike' && <BikeUpgrade />}
     {screen === 'race' && <RaceScreen />}
     {screen === 'contracts' && <Contracts />}
+    {screen === 'messages' && <Messages />}
   </Layout>
 )
 }

@@ -6,10 +6,11 @@ const navItems = [
   { id: 'bike', label: 'Bike & Upgrades' },
   { id: 'race', label: 'Race' },
   { id: 'contracts', label: 'Contracts' },
+  { id: 'messages', label: 'Messages' },
 ]
 
 export default function Layout({ children, currentScreen, setScreen, onMainMenu, onNewGame }) {
-  const { team, budget, round, season, results, resetGame } = useGameStore()
+  const { team, budget, round, season, results, resetGame, unreadCount } = useGameStore()
   const [showReset, setShowReset] = useState(false)
 
   const totalPoints = results.reduce((acc, r) => acc + r.points, 0) + 87
@@ -94,13 +95,18 @@ export default function Layout({ children, currentScreen, setScreen, onMainMenu,
             <button
               key={item.id}
               onClick={() => setScreen(item.id)}
-              className={`text-left px-4 py-3 rounded-lg text-base transition-colors ${
+              className={`text-left px-4 py-3 rounded-lg text-base transition-colors relative ${
                 currentScreen === item.id
                   ? 'bg-red-600 text-white font-medium'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
               }`}
             >
               {item.label}
+              {item.id === 'messages' && unreadCount > 0 && (
+                <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center font-bold">
+                  {unreadCount}
+                </span>
+              )}
             </button>
           ))}
         </aside>

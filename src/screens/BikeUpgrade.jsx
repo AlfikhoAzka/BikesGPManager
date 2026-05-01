@@ -3,11 +3,11 @@ import { useGameStore } from '../store/gameStore'
 import StarRating from '../components/StarRating'
 
 const upgrades = [
-  { id: 'topSpeed', label: 'Seamless Gearbox', desc: '+4 top speed, +3 braking', cost: 1.8, stats: { topSpeed: 4, braking: 3 } },
-  { id: 'aero', label: 'New Aero Winglet Kit', desc: '+6 aero, -1 top speed', cost: 2.1, stats: { aero: 6, topSpeed: -1 } },
-  { id: 'electronics', label: 'Bosch Electronics v9', desc: '+8 electronics, +2 braking', cost: 3.0, stats: { electronics: 8, braking: 2 } },
-  { id: 'chassis', label: 'Carbon Fibre Chassis', desc: '+7 chassis rigidity', cost: 2.5, stats: { chassis: 7 } },
-  { id: 'braking', label: 'Brembo Brake Package', desc: '+5 braking, +2 electronics', cost: 1.5, stats: { braking: 5, electronics: 2 } },
+  { id: 'topSpeed', label: 'Seamless Gearbox', desc: '+1 top speed, +1 braking', cost: 1.8, stats: { topSpeed: 1, braking: 1 } },
+  { id: 'aero', label: 'New Aero Winglet Kit', desc: '+2 aero, -1 top speed', cost: 2.1, stats: { aero: 2, topSpeed: -1 } },
+  { id: 'electronics', label: 'Bosch Electronics v9', desc: '+2 electronics, +1 braking', cost: 3.0, stats: { electronics: 2, braking: 1 } },
+  { id: 'chassis', label: 'Carbon Fibre Chassis', desc: '+2 chassis rigidity', cost: 2.5, stats: { chassis: 2 } },
+  { id: 'braking', label: 'Brembo Brake Package', desc: '+1 braking, +1 electronics', cost: 1.5, stats: { braking: 1, electronics: 1 } },
 ]
 
 export default function BikeUpgrade() {
@@ -60,7 +60,7 @@ export default function BikeUpgrade() {
           <div>
             <div className="text-base font-semibold text-white">{bike.model}</div>
             <div className="text-base text-gray-500 mt-0.5">
-              Overall: <span className="text-blue-400 font-semibold">{bikeOverall}/100</span>
+              Overall: <span className="text-blue-400 font-semibold">{bikeOverall}/20</span>
             </div>
           </div>
           <div className="text-right">
@@ -80,7 +80,7 @@ export default function BikeUpgrade() {
             <div key={stat.label} className="bg-gray-800 rounded-xl p-3 flex flex-col gap-2">
               <div className="text-base text-gray-400">{stat.label}</div>
               <div className="text-2xl font-bold text-white">{stat.value}</div>
-              <StarRating value={stat.value} size="sm" />
+              <StarRating value={stat.value} max={20} size="sm" />
             </div>
           ))}
         </div>

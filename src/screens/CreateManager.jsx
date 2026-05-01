@@ -1,5 +1,12 @@
 import { useState } from 'react'
-import { faker } from '@faker-js/faker'
+import StarRating from '../components/StarRating'
+import {
+  faker,
+  fakerID_ID, fakerES, fakerIT, fakerFR, fakerDE, fakerNL,
+  fakerPT_BR, fakerPT_PT, fakerEN_GB, fakerEN_AU, fakerJA,
+  fakerZH_CN, fakerKO, fakerPL, fakerRU, fakerTR, fakerRO,
+  fakerHU, fakerSV, fakerNB_NO, fakerFI, fakerDA, fakerCS_CZ, fakerUK
+} from '@faker-js/faker'
 import countries from 'i18n-iso-countries'
 import enLocale from 'i18n-iso-countries/langs/en.json'
 
@@ -57,8 +64,6 @@ const AVATAR_COLORS = [
   { bg: 'bg-pink-600' }, { bg: 'bg-cyan-600' },
 ]
 
-const FAVORITE_MANUFACTURERS = ['Ducati', 'Honda', 'Yamaha', 'Aprilia', 'KTM', 'Suzuki']
-
 const SKILL_INFO = {
   strategy: { label: 'Strategy', desc: 'Affects race strategy decisions — tyre choice, pit timing, pace management.', color: 'text-red-400', bar: 'bg-red-500' },
   negotiation: { label: 'Negotiation', desc: 'Better contract deals, lower rider salaries, higher sponsor income.', color: 'text-blue-400', bar: 'bg-blue-500' },
@@ -66,25 +71,16 @@ const SKILL_INFO = {
   motivation: { label: 'Motivation', desc: 'Keeps rider morale high, boosts performance under pressure.', color: 'text-green-400', bar: 'bg-green-500' },
 }
 
-function SkillBar({ value, max = 20, color = 'bg-red-500' }) {
-  return (
-    <div className="w-full bg-gray-800 rounded-full h-2">
-      <div className={`${color} h-2 rounded-full transition-all duration-300`} style={{ width: `${(value / max) * 100}%` }} />
-    </div>
-  )
-}
-
 export default function CreateManager({ onConfirm, onBack }) {
-  import { faker, fakerID_ID, fakerES, fakerIT, fakerFR, fakerDE, fakerNL, fakerPT_BR, fakerPT_PT, fakerEN_GB, fakerEN_AU, fakerJA, fakerZH_CN, fakerKO, fakerPL, fakerRU, fakerTR, fakerRO, fakerHU, fakerSV, fakerNB_NO, fakerFI, fakerDA, fakerCS_CZ, fakerUK } from '@faker-js/faker'
   const [step, setStep] = useState(1)
   const [name, setName] = useState('')
   const [age, setAge] = useState(35)
-  const [nationality, setNationality] = useState('Indonesia')
+  const [nationality, setNationality] = useState('Spain')
   const [countrySearch, setCountrySearch] = useState('')
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false)
   const [avatarColor, setAvatarColor] = useState(0)
   const [background, setBackground] = useState(null)
   const [experience, setExperience] = useState(null)
-  const [favoriteManufacturer, setFavoriteManufacturer] = useState('Ducati')
   const [skillPoints, setSkillPoints] = useState({ strategy: 0, negotiation: 0, technical: 0, motivation: 0 })
   const [freePoints, setFreePoints] = useState(0)
   const [error, setError] = useState('')
@@ -162,7 +158,6 @@ export default function CreateManager({ onConfirm, onBack }) {
       age,
       nationality,
       avatarColor,
-      favoriteManufacturer,
       background: background.id,
       experience: experience.id,
       skills: skillPoints,
@@ -227,12 +222,12 @@ export default function CreateManager({ onConfirm, onBack }) {
                   />
                   <button
                     onClick={generateName}
-                    className="px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-sm font-medium text-gray-300 transition-colors whitespace-nowrap"
+                    className="px-4 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-base font-medium text-gray-300 transition-colors whitespace-nowrap"
                   >
                     Generate
                   </button>
                 </div>
-                <div className="text-xs text-gray-600 mt-1">Name will be generated based on selected nationality</div>
+                <div className="text-sm text-gray-600 mt-1">Name generated based on selected nationality</div>
               </div>
 
               <div>
@@ -244,46 +239,37 @@ export default function CreateManager({ onConfirm, onBack }) {
                 </div>
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                  Nationality — <span className="text-white normal-case font-semibold">{nationality}</span>
+                  Nationality — <span className="text-white normal-case">{nationality}</span>
                 </label>
                 <input
                   type="text"
                   value={countrySearch}
                   onChange={e => setCountrySearch(e.target.value)}
-                  placeholder="Search country..."
-                  className="w-full bg-gray-900 border border-gray-700 rounded-t-xl px-4 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-red-500 transition-colors text-sm"
+                  onFocus={() => setShowCountryDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowCountryDropdown(false), 150)}
+                  placeholder="Search or click to browse..."
+                  className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-red-500 transition-colors text-base"
                 />
-                <select
-                  value={nationality}
-                  onChange={e => { setNationality(e.target.value); setCountrySearch('') }}
-                  size={4}
-                  className="w-full bg-gray-900 border border-gray-700 border-t-0 rounded-b-xl px-4 py-1 text-white focus:outline-none text-sm"
-                >
-                  {filteredCountries.map(n => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-2">
-                <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider block mb-2">Favourite Manufacturer</label>
-                <div className="grid grid-cols-6 gap-2">
-                  {FAVORITE_MANUFACTURERS.map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setFavoriteManufacturer(m)}
-                      className={`py-2 rounded-xl text-sm font-medium transition-colors border ${
-                        favoriteManufacturer === m
-                          ? 'bg-red-600 border-red-500 text-white'
-                          : 'bg-gray-900 border-gray-700 text-gray-400 hover:border-gray-500'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
+                {showCountryDropdown && (
+                  <div className="absolute z-10 w-full mt-1 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden shadow-xl max-h-52 overflow-y-auto">
+                    {filteredCountries.slice(0, 50).map(n => (
+                      <div
+                        key={n}
+                        onMouseDown={() => { setNationality(n); setCountrySearch(''); setShowCountryDropdown(false) }}
+                        className={`px-4 py-2.5 cursor-pointer text-base transition-colors hover:bg-gray-800 ${
+                          nationality === n ? 'text-red-400 font-medium bg-gray-800' : 'text-white'
+                        }`}
+                      >
+                        {n}
+                      </div>
+                    ))}
+                    {filteredCountries.length === 0 && (
+                      <div className="px-4 py-3 text-gray-500 text-sm">No country found</div>
+                    )}
+                  </div>
+                )}
               </div>
 
             </div>
@@ -386,7 +372,7 @@ export default function CreateManager({ onConfirm, onBack }) {
                       </button>
                     </div>
                   </div>
-                  <SkillBar value={skillPoints[key]} max={10} color={info.bar} />
+                  <StarRating value={skillPoints[key]} max={10} size="md" />
                 </div>
               ))}
             </div>
@@ -400,7 +386,7 @@ export default function CreateManager({ onConfirm, onBack }) {
                 <div>
                   <div className="text-base font-semibold text-white">{name || 'No name'}</div>
                   <div className="text-sm text-gray-500">{age} years old · {nationality}</div>
-                  <div className="text-sm text-gray-500">{background?.label} · {experience?.label} · Fav: {favoriteManufacturer}</div>
+                  <div className="text-sm text-gray-500">{background?.label} · {experience?.label}</div>
                 </div>
               </div>
             </div>
