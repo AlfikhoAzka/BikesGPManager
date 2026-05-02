@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 
-const navItems = [
+
+export default function Layout({ children, currentScreen, setScreen, onMainMenu, onNewGame }) {
+  const { team, budget, round, season, results, resetGame, unreadCount, isFactoryTeam } = useGameStore()
+
+  const navItems = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'bike', label: 'Bike & Upgrades' },
   { id: 'race', label: 'Race' },
@@ -10,8 +14,6 @@ const navItems = [
   ...(isFactoryTeam ? [{ id: 'rnd', label: 'R&D' }] : []),
 ]
 
-export default function Layout({ children, currentScreen, setScreen, onMainMenu, onNewGame }) {
-  const { team, budget, round, season, results, resetGame, unreadCount, isFactoryTeam } = useGameStore()
   const [showReset, setShowReset] = useState(false)
 
   const totalPoints = results.reduce((acc, r) => acc + r.points, 0) + 87

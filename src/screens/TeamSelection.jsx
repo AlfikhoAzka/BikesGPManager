@@ -2,7 +2,6 @@ import { useState } from 'react'
 import StarRating from '../components/StarRating'
 
 const TEAMS = [
-  // ─── FACTORY ───────────────────────────────────────────────
   {
     id: 'ducati_factory',
     name: 'Ducati Lenovo',
