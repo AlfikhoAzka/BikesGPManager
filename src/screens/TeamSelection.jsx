@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import StarRating from '../components/StarRating'
+import { generateRiderDatabase, pickRidersForTeam } from '../data/generateRiders'
 
 const TEAMS = [
   {

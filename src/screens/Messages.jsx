@@ -166,9 +166,10 @@ function InboxView() {
     setReplyText('')
   }
 
-  function handleAction(action) {
-    if (actionDone[action.type]) return
-    setActionDone(prev => ({ ...prev, [action.type]: true }))
+  function handleAction(action, msgId) {
+    const key = `${msgId}_${action.type}`
+    if (actionDone[key]) return
+    setActionDone(prev => ({ ...prev, [key]: true }))
     if (action.type === 'sponsor_bonus' || action.type === 'accept_sponsor') {
       spendBudget(-(action.amount || 0.5))
     }
@@ -283,25 +284,20 @@ function InboxView() {
                 <p className="text-base text-gray-300 leading-relaxed whitespace-pre-line">{selectedMsg.body}</p>
               </div>
 
-              {selectedMsg.actions?.length > 0 && (
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Actions</div>
-                  {selectedMsg.actions.map((action, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleAction(action)}
-                      disabled={!!actionDone[action.type]}
-                      className={`w-full text-left px-4 py-3 rounded-xl border text-base font-medium transition-colors ${
-                        actionDone[action.type]
-                          ? 'border-green-800 bg-green-950 text-green-400 cursor-not-allowed'
-                          : 'border-gray-700 bg-gray-800 text-white hover:border-red-600 hover:bg-red-950'
-                      }`}
-                    >
-                      {actionDone[action.type] ? '✓ ' : ''}{action.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {selectedMsg.actions.map((action, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleAction(action, selectedMsg.id)}
+                  disabled={!!actionDone[`${selectedMsg.id}_${action.type}`]}
+                  className={`w-full text-left px-4 py-3 rounded-xl border text-base font-medium transition-colors ${
+                    actionDone[`${selectedMsg.id}_${action.type}`]
+                      ? 'border-green-800 bg-green-950 text-green-400 cursor-not-allowed'
+                      : 'border-gray-700 bg-gray-800 text-white hover:border-red-600 hover:bg-red-950'
+                  }`}
+                >
+                  {actionDone[`${selectedMsg.id}_${action.type}`] ? '✓ ' : ''}{action.label}
+                </button>
+              ))}
 
               {replySent && (
                 <div className="bg-green-950 border border-green-800 rounded-xl px-4 py-3 text-sm text-green-400">
