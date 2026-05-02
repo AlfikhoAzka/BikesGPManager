@@ -42,7 +42,7 @@ export default function BikeUpgrade() {
 
       <div>
         <h2 className="text-lg font-semibold mb-1">Bike & Upgrades</h2>
-        <p className="text-base text-gray-500">{bike.model} · {bike.spec === 'satellite' ? 'Satellite Spec' : 'Factory Spec'}</p>
+        <p className="text-base text-gray-500">{bike.model} · {bike.spec === 'factory' ? 'Factory Spec' : 'Independent Spec'}</p>
       </div>
 
       {notification && (

@@ -43,7 +43,7 @@ export function initRace(round, riders, bike, staff) {
       id: r.id,
       name: r.name,
       number: r.number,
-      team: 'VR46 Satellite',
+      team: 'VR46 independent',
       isPlayer: true,
       pace: r.pace,
       lapTime: circuit.baseTime * (1 + (1 - basePace) * 0.15 + TYRE_PACE_BONUS[tyre] - engineerBonus),

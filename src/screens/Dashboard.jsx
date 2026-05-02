@@ -52,7 +52,7 @@ export default function Dashboard() {
         <div>
           <h2 className="text-lg font-semibold mb-1">Dashboard</h2>
           <p className="text-sm text-gray-500">
-            Round {round}/20 · {team.manufacturer} {bike.spec === 'satellite' ? 'Satellite' : 'Factory'} · Season {season}
+            Round {round}/20 · {team.manufacturer} {bike.spec === 'factory' ? 'Factory' : 'Independent'} · Season {season}
           </p>
         </div>
         {manager && (

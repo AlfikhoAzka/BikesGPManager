@@ -55,11 +55,16 @@ const EMPTY_STATE = {
   season: 2025,
   round: 1,
   budget: 14.2,
+  rdBudget: 0,
+  isFactoryTeam: false,
   championshipPoints: 0,
   championshipPosition: 20,
+  boardTarget: null,
+  boardPressure: 0,
+  satelliteTeams: [],
   team: {
-    name: 'Pertamina VR46 Satellite',
-    type: 'satellite',
+    name: 'Pertamina VR46',
+    type: 'independent',
     manufacturer: 'Ducati',
     reputation: 60,
   },
@@ -90,6 +95,36 @@ export const useGameStore = create(
           [stat]: Math.min(20, state.bike[stat] + amount),
           upgrades: [...state.bike.upgrades, stat],
         }
+      })),
+
+      spendRdBudget: (amount) => set(state => ({
+        rdBudget: parseFloat((state.rdBudget - amount).toFixed(1))
+      })),
+
+      developBike: (stat, amount, cost) => set(state => ({
+        rdBudget: parseFloat((state.rdBudget - cost).toFixed(1)),
+        bike: {
+          ...state.bike,
+          [stat]: Math.min(20, state.bike[stat] + amount),
+        }
+      })),
+
+      addBoardPressure: (amount) => set(state => ({
+        boardPressure: Math.min(100, state.boardPressure + amount),
+      })),
+
+      reduceBoardPressure: (amount) => set(state => ({
+        boardPressure: Math.max(0, state.boardPressure - amount),
+      })),
+
+      addSatelliteTeam: (team) => set(state => ({
+        satelliteTeams: [...state.satelliteTeams, team],
+      })),
+
+      updateSatelliteTeam: (teamId, changes) => set(state => ({
+        satelliteTeams: state.satelliteTeams.map(t =>
+          t.id === teamId ? { ...t, ...changes } : t
+        ),
       })),
 
       addResult: (result, raceResults) => set((state) => {
@@ -178,8 +213,16 @@ export const useGameStore = create(
 
       initNewGame: (manager, team) => {
         const riderDatabase = generateRiderDatabase()
-        const teamRiders = pickRidersForTeam(riderDatabase, team.type, 2)
+        const teamRiders = pickRidersForTeam(riderDatabase, team.type, 2, team.name)
         teamRiders.forEach(r => { r.teamId = 'player' })
+
+        const boardTarget = team.type === 'factory' ? {
+          ducati_factory: { label: 'Podium every race', minPosition: 3 },
+          aprilia_factory: { label: 'Top 5 every race', minPosition: 5 },
+          ktm_factory: { label: 'Top 6 every race', minPosition: 6 },
+          honda_factory: { label: 'Top 8 every race', minPosition: 8 },
+          yamaha_factory: { label: 'Top 8 every race', minPosition: 8 },
+        }[team.id] : null
 
         set({
           ...EMPTY_STATE,
@@ -192,25 +235,35 @@ export const useGameStore = create(
             experience: manager.experience,
             skills: manager.skills,
           },
-          season: 2025,
+          season: 2026,
           round: 1,
           budget: team.budget,
+          rdBudget: team.rdBudget || 0,
+          isFactoryTeam: team.type === 'factory',
+          boardTarget,
+          boardPressure: 0,
           championshipPoints: 0,
           championshipPosition: 20,
           team: {
             name: team.name,
             type: team.type,
             manufacturer: team.manufacturer,
-            reputation: 60,
+            reputation: team.type === 'factory' ? 85 : 60,
           },
           riders: teamRiders,
           riderDatabase,
           bike: {
             model: `${team.manufacturer} ${
-              team.id === 'vr46' ? 'GP23' :
-              team.id === 'lcr' ? 'RC213V' :
+              team.id === 'ducati_factory' ? 'GP26' :
+              team.id === 'aprilia_factory' ? 'RS-GP26' :
+              team.id === 'ktm_factory' ? 'RC16' :
+              team.id === 'honda_factory' ? 'RC213V' :
+              team.id === 'yamaha_factory' ? 'YZR-M1' :
+              team.id === 'vr46' ? 'GP25' :
+              team.id === 'pramac' ? 'YZR-M1' :
               team.id === 'tech3' ? 'RC16' :
-              team.id === 'trackhouse' ? 'RS-GP' : 'GP23'
+              team.id === 'trackhouse' ? 'RS-GP25' :
+              team.id === 'lcr' ? 'RC213V' : 'GP24'
             }`,
             spec: team.type,
             topSpeed: team.bike.topSpeed,
@@ -225,6 +278,17 @@ export const useGameStore = create(
           messages: [],
           chats: {},
           unreadCount: 0,
+          satelliteTeams: team.type === 'factory' ? [
+            {
+              id: `${team.manufacturer.toLowerCase()}_sat_1`,
+              name: `${team.manufacturer} Independent A`,
+              manufacturer: team.manufacturer,
+              supportLevel: 'standard',
+              bikeSpec: 'previous',
+              budget: 12.0,
+              riders: [],
+            }
+          ] : [],
           grid: [],
         })
         setTimeout(() => get().generateInboxMessages(), 100)

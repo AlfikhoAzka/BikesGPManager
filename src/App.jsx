@@ -9,6 +9,7 @@ import BikeUpgrade from './screens/BikeUpgrade'
 import RaceScreen from './screens/RaceScreen'
 import Contracts from './screens/Contracts'
 import Messages from './screens/Messages'
+import RnD from './screens/RnD'
 
 export default function App() {
   const {manager, initNewGame, resetGame } = useGameStore()
@@ -72,6 +73,7 @@ export default function App() {
     {screen === 'race' && <RaceScreen />}
     {screen === 'contracts' && <Contracts />}
     {screen === 'messages' && <Messages />}
+    {screen === 'rnd' && <RnD />}
   </Layout>
 )
 }

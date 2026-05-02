@@ -168,7 +168,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇮🇹',
     team: 'Pertamina VR46',
     manufacturer: 'Ducati',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 16, pace: 16, consistency: 15, wetSkill: 14, fitness: 16, mentalState: 15,
     salary: 2.5,
@@ -181,7 +181,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇮🇹',
     team: 'Pertamina VR46',
     manufacturer: 'Ducati',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 15, pace: 15, consistency: 15, wetSkill: 14, fitness: 15, mentalState: 14,
     salary: 2.0,
@@ -195,7 +195,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇹🇷',
     team: 'Prima Pramac Yamaha',
     manufacturer: 'Yamaha',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 17, pace: 17, consistency: 15, wetSkill: 16, fitness: 17, mentalState: 17,
     salary: 3.5,
@@ -208,7 +208,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇦🇺',
     team: 'Prima Pramac Yamaha',
     manufacturer: 'Yamaha',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 15, pace: 15, consistency: 14, wetSkill: 15, fitness: 14, mentalState: 14,
     salary: 2.0,
@@ -222,7 +222,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇪🇸',
     team: 'Red Bull KTM Tech3',
     manufacturer: 'KTM',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 16, pace: 16, consistency: 15, wetSkill: 15, fitness: 15, mentalState: 14,
     salary: 2.8,
@@ -235,7 +235,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇮🇹',
     team: 'Red Bull KTM Tech3',
     manufacturer: 'KTM',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 16, pace: 16, consistency: 14, wetSkill: 14, fitness: 16, mentalState: 14,
     salary: 2.5,
@@ -249,7 +249,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇪🇸',
     team: 'Trackhouse Racing',
     manufacturer: 'Aprilia',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 15, pace: 15, consistency: 13, wetSkill: 14, fitness: 15, mentalState: 13,
     salary: 1.8,
@@ -262,7 +262,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇯🇵',
     team: 'Trackhouse Racing',
     manufacturer: 'Aprilia',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 15, pace: 15, consistency: 14, wetSkill: 13, fitness: 15, mentalState: 14,
     salary: 1.8,
@@ -276,7 +276,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇫🇷',
     team: 'LCR Honda',
     manufacturer: 'Honda',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'good',
     overall: 15, pace: 15, consistency: 15, wetSkill: 14, fitness: 14, mentalState: 15,
     salary: 2.0,
@@ -289,7 +289,7 @@ const MOTOGP_2026_RIDERS = [
     flag: '🇧🇷',
     team: 'LCR Honda',
     manufacturer: 'Honda',
-    teamType: 'satellite',
+    teamType: 'independent',
     tier: 'midfield',
     overall: 13, pace: 13, consistency: 12, wetSkill: 12, fitness: 14, mentalState: 13,
     salary: 1.2,
@@ -305,25 +305,27 @@ export function generateRiderDatabase() {
   }))
 }
 
-export function pickRidersForTeam(allRiders, teamType, count = 2) {
+export function pickRidersForTeam(allRiders, teamType, count = 2, teamName = null) {
+  if (teamName) {
+    const teamRiders = allRiders.filter(r => r.team === teamName)
+    if (teamRiders.length >= count) return teamRiders.slice(0, count)
+  }
+
   const tierMap = {
     factory: ['elite', 'good'],
     'semi-factory': ['good', 'midfield'],
     satellite: ['good', 'midfield'],
     independent: ['good', 'midfield'],
   }
-
   const preferredTiers = tierMap[teamType] || ['good', 'midfield']
   const available = allRiders.filter(r =>
     r.teamId === null && preferredTiers.includes(r.tier)
   )
-
   const picked = []
   for (let i = 0; i < count && available.length > 0; i++) {
     const idx = Math.floor(Math.random() * available.length)
     picked.push(available.splice(idx, 1)[0])
   }
-
   return picked
 }
 
