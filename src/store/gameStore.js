@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { generatePostRaceMessages, generateSeasonStartMessages } from '../engine/messageEngine'
 
 export const useGameStore = create(
   persist(
@@ -84,31 +85,49 @@ export const useGameStore = create(
         }
       })),
 
-      addResult: (result) => set((state) => {
+      addResult: (result, raceResults) => set((state) => {
         const newPoints = state.championshipPoints + result.points
-        return {
+        const newState = {
           results: [...state.results, result],
           round: state.round + 1,
           budget: parseFloat((state.budget + result.points * 0.05).toFixed(1)),
           championshipPoints: newPoints,
           championshipPosition: newPoints > 150 ? 3 : newPoints > 100 ? 5 : 6,
         }
+
+        if (raceResults) {
+          const postRaceMsgs = generatePostRaceMessages(raceResults, state)
+          const formatted = postRaceMsgs.map(msg => ({
+            id: Math.floor(Date.now() + Math.random() * 1000),
+            read: false,
+            timestamp: new Date().toISOString(),
+            ...msg,
+          }))
+          newState.messages = [...formatted, ...state.messages]
+          newState.unreadCount = state.unreadCount + formatted.length
+        }
+
+        return newState
       }),
 
       addMessage: (message) => set(state => ({
-        messages: [{
-          id: Date.now(),
-          read: false,
+        messages: [{ 
+          id: Math.floor(Date.now() + Math.random() * 1000),
+          read: false, 
           timestamp: new Date().toISOString(),
-          ...message,
+          ...message 
         }, ...state.messages],
         unreadCount: state.unreadCount + 1,
       })),
 
-      markMessageRead: (id) => set(state => ({
-        messages: state.messages.map(m => ({ ...m, read: true})),
-        unreadCount: 0,
-      })),
+      markMessageRead: (id) => set(state => {
+        const msg = state.messages.find(m => m.id === id)
+        if (!msg || msg.read) return state
+        return {
+          messages: state.messages.map(m => m.id === id ? { ...m, read: true } : m),
+          unreadCount: Math.max(0, state.unreadCount - 1),
+        }
+      }),
 
       markAllRead: () => set(state => ({
         messages: state.messages.map(m => ({ ...m, read: true})),
@@ -146,78 +165,8 @@ export const useGameStore = create(
 
       generateInboxMessages: () => {
         const state = get()
-        const { riders, staff, round, budget } = state
-        const messages = []
-
-        riders.forEach(rider => {
-          if (round === 1) {
-            messages.push({
-              from: rider.name,
-              fromId: `rider_${rider.id}`,
-              type: 'rider',
-              subject: 'Ready for the season!',
-              preview: 'Looking forward to working with you this season.',
-              body: `Hi Manager,\n\nI'm really excited to start this season with the team. I've been working hard during the off-season and I feel ready.\n\nLet's make it a great year!\n\n— ${rider.name}`,
-              avatar: rider.number,
-              priority: 'normal',
-            })
-          }
-          if (rider.mentalState < 12) {
-            messages.push({
-              from: rider.name,
-              fromId: `rider_${rider.id}`,
-              type: 'rider',
-              subject: 'Feeling frustrated',
-              preview: 'I need to talk about my situation....',
-              body: `Hi, \n\nI'll be honest, I'm struggling a bit mentally right now. The results haven't been what i expected and I feel like I need more support from the team. \n\nCan we discuss this? \n\n- ${rider.nname}`,
-              avatar: rider.number,
-              priority: 'high',
-              action: { type: 'boost_morale', riderId: rider.id },
-            })
-          }
-        })
-
-        if (budget < 5) {
-          messages.push({
-            from: 'Finance Department',
-            fromId: 'finance',
-            type: 'sponsor',
-            subject: 'Budget Warning',
-            preview: 'Your budget is running low this season.',
-            body: `Manager, \n\nWe want to flag that your remaining budget (£${budget}M) is getting critically low. \n\nPlease review your spending before the next round. \n\n- Finance`,
-            avatar: '£',
-            priority: 'high',
-          })
-        }
-
-        messages.push({
-          from: 'MotoGP Media',
-          fromId: 'media',
-          type: 'media',
-          subject: 'Press conference request',
-          preview: 'We would like to schedule an interview...',
-          body: `Dear Team Manager, \n\nWe would like to invite you to a press conference ahead of round ${round + 1}.\n\nPlease let us know your availabliity. \n\n- MotoGP Media Team`,
-          avatar: '📰',
-          priority: 'normal',
-          action: { type: 'press_conference' },
-        })
-
-        Object.entries(staff).forEach(([role, person]) => {
-          if (round % 3 === 0) {
-            messages.push({
-              from: person.name,
-              fromId: `staff_${role}`,
-              type: 'staff',
-              subject: 'Technical update',
-              preview: `Here's my analysis after Round ${round}...`,
-              body: `Hi Manager, \n\nAfter reviewing our data from Round ${round}, I have some recommendations: \n\n• Tyre pressure needs adjustment\n• Suspension geometry could be improved\n• Electronics mapping version 3 might give us an edge\n\nLet me know if you want to discuss in detail. \n\n- ${person.name}`,
-              avatar: '🔧',
-              priority: 'normal',
-            })
-          }
-        })
-
-        messages.forEach(msg => get().addMessage(msg))
+        const msgs = generateSeasonStartMessages(state)
+        msgs.forEach(msg => get().addMessage(msg))
       },
 
       initNewGame: (manager, team) => set({

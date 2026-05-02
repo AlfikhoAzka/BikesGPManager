@@ -75,7 +75,10 @@ export default function RaceScreen() {
   function finishRace() {
     if (!results) return
     const playerResults = results.filter(r => r.isPlayer)
-    playerResults.forEach(r => addResult({ round, position: r.position, points: r.points, rider: r.name }))
+    playerResults.forEach(r => addResult(
+      { round, position: r.position, points: r.points, rider: r.name },
+      results
+    ))
   }
 
   useEffect(() => {
