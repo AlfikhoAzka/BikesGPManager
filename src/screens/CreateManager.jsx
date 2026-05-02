@@ -53,9 +53,9 @@ const BACKGROUNDS = [
 ]
 
 const EXPERIENCE_LEVELS = [
-  { id: 'rookie', label: 'Rookie', desc: 'First season as manager. Low base stats but higher growth rate.', basePoints: 12 },
-  { id: 'experienced', label: 'Experienced', desc: 'Several seasons under your belt. Balanced stats.', basePoints: 16 },
-  { id: 'veteran', label: 'Veteran', desc: 'Decades of experience. High base stats, slower growth.', basePoints: 20 },
+  { id: 'rookie', label: 'Rookie', desc: 'First season as manager. Low base stats but higher growth rate.', basePoints: 16 },
+  { id: 'experienced', label: 'Experienced', desc: 'Several seasons under your belt. Balanced stats.', basePoints: 20 },
+  { id: 'veteran', label: 'Veteran', desc: 'Decades of experience. High base stats, slower growth.', basePoints: 30 },
 ]
 
 const AVATAR_COLORS = [
@@ -109,20 +109,18 @@ export default function CreateManager({ onConfirm, onBack }) {
     const base = experience ? experience.basePoints : 16
     const newSkills = { strategy: 0, negotiation: 0, technical: 0, motivation: 0 }
     Object.entries(bg.bonus).forEach(([k, v]) => { newSkills[k] = v })
-    const used = Object.values(newSkills).reduce((a, b) => a + b, 0)
     setSkillPoints(newSkills)
-    setFreePoints(base - used)
+    setFreePoints(base)
   }
 
   function selectExperience(exp) {
     setExperience(exp)
-    if (background) {
       const newSkills = { strategy: 0, negotiation: 0, technical: 0, motivation: 0 }
+    if (background) {
       Object.entries(background.bonus).forEach(([k, v]) => { newSkills[k] = v })
-      const used = Object.values(newSkills).reduce((a, b) => a + b, 0)
-      setSkillPoints(newSkills)
-      setFreePoints(exp.basePoints - used)
     }
+      setSkillPoints(newSkills)
+      setFreePoints(exp.basePoints)
   }
 
   function addPoint(skill) {
