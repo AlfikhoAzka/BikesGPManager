@@ -17,7 +17,7 @@ export default function RaceScreen() {
   const circuit = getCircuit(round)
 
   function startRace() {
-    const state = initRace(round, riders, bike, staff)
+    const state = initRace(round, riders, bike, staff, team.name)
     setRaceState(state)
     setResults(null)
     setLog([`Race started at ${circuit.name}, ${circuit.laps} laps.`])

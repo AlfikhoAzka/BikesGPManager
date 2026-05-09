@@ -77,6 +77,9 @@ const EMPTY_STATE = {
   unreadCount: 0,
   riderDatabase: [],
   grid: [],
+  negotiations: {},
+  contractOffers: [],
+  scoutedRiders: [],
 }
 
 export const useGameStore = create(
@@ -347,15 +350,15 @@ export const useGameStore = create(
 
         const DEFAULT_TEAMS = [
           { id: 'ducati_factory', name: 'Ducati Lenovo', manufacturer: 'Ducati', type: 'factory', budget: 28.0, bike: { topSpeed: 19, aero: 18, chassis: 18, braking: 19, electronics: 19 } },
-          { id: 'pramac', name: 'Prima Pramac', manufacturer: 'Ducati', type: 'satellite', budget: 16.5, bike: { topSpeed: 17, aero: 15, chassis: 16, braking: 16, electronics: 15 } },
+          { id: 'pramac', name: 'Prima Pramac', manufacturer: 'Ducati', type: 'independent', budget: 16.5, bike: { topSpeed: 17, aero: 15, chassis: 16, braking: 16, electronics: 15 } },
           { id: 'gresini', name: 'Gresini Racing', manufacturer: 'Ducati', type: 'independent', budget: 11.0, bike: { topSpeed: 16, aero: 14, chassis: 15, braking: 15, electronics: 14 } },
-          { id: 'vr46', name: 'Pertamina VR46', manufacturer: 'Ducati', type: 'satellite', budget: 14.2, bike: { topSpeed: 16, aero: 14, chassis: 15, braking: 15, electronics: 13 } },
+          { id: 'vr46', name: 'Pertamina VR46', manufacturer: 'Ducati', type: 'independent', budget: 14.2, bike: { topSpeed: 16, aero: 14, chassis: 15, braking: 15, electronics: 13 } },
           { id: 'aprilia_factory', name: 'Aprilia Racing', manufacturer: 'Aprilia', type: 'factory', budget: 24.0, bike: { topSpeed: 18, aero: 17, chassis: 17, braking: 17, electronics: 18 } },
-          { id: 'trackhouse', name: 'Trackhouse Racing', manufacturer: 'Aprilia', type: 'satellite', budget: 13.0, bike: { topSpeed: 15, aero: 14, chassis: 14, braking: 14, electronics: 13 } },
+          { id: 'trackhouse', name: 'Trackhouse Racing', manufacturer: 'Aprilia', type: 'independent', budget: 13.0, bike: { topSpeed: 15, aero: 14, chassis: 14, braking: 14, electronics: 13 } },
           { id: 'ktm_factory', name: 'Red Bull KTM', manufacturer: 'KTM', type: 'factory', budget: 22.0, bike: { topSpeed: 17, aero: 15, chassis: 16, braking: 16, electronics: 15 } },
-          { id: 'tech3', name: 'Red Bull KTM Tech3', manufacturer: 'KTM', type: 'satellite', budget: 13.8, bike: { topSpeed: 15, aero: 14, chassis: 15, braking: 14, electronics: 13 } },
+          { id: 'tech3', name: 'Red Bull KTM Tech3', manufacturer: 'KTM', type: 'independent', budget: 13.8, bike: { topSpeed: 15, aero: 14, chassis: 15, braking: 14, electronics: 13 } },
           { id: 'honda_factory', name: 'Repsol Honda', manufacturer: 'Honda', type: 'factory', budget: 26.0, bike: { topSpeed: 16, aero: 14, chassis: 15, braking: 15, electronics: 14 } },
-          { id: 'lcr', name: 'LCR Honda', manufacturer: 'Honda', type: 'satellite', budget: 12.5, bike: { topSpeed: 14, aero: 13, chassis: 13, braking: 14, electronics: 12 } },
+          { id: 'lcr', name: 'LCR Honda', manufacturer: 'Honda', type: 'independent', budget: 12.5, bike: { topSpeed: 14, aero: 13, chassis: 13, braking: 14, electronics: 12 } },
           { id: 'yamaha_factory', name: 'Monster Yamaha', manufacturer: 'Yamaha', type: 'factory', budget: 23.0, bike: { topSpeed: 16, aero: 15, chassis: 16, braking: 15, electronics: 15 } },
         ]
 
@@ -363,7 +366,7 @@ export const useGameStore = create(
         const grid = DEFAULT_TEAMS.map(team => {
           const available = db.filter(r =>
             !usedRiderIds.has(r.id) &&
-            r.tier === (team.type === 'factory' ? 'elite' : team.type === 'satellite' ? 'good' : 'midfield')
+            r.tier === (team.type === 'factory' ? 'elite' : 'good')
           )
           const riderIds = []
           for (let i = 0; i < 2; i++) {
@@ -379,6 +382,94 @@ export const useGameStore = create(
 
         set({ grid })
       },
+
+      // ─── CONTRACT SYSTEM ──────────────────────────────────────────────────────
+
+      startNegotiation: (targetId, type, initialOffer) => set(state => ({
+        negotiations: {
+          ...state.negotiations,
+          [targetId]: {
+            targetId,
+            type,
+            status: 'pending',
+            round: 0,
+            maxRounds: 3,
+            playerOffer: initialOffer,
+            agentCounter: null,
+            history: [],
+            startedAt: Date.now(),
+          }
+        }
+      })),
+
+      updateNegotiation: (targetId, changes) => set(state => ({
+        negotiations: {
+          ...state.negotiations,
+          [targetId]: {
+            ...state.negotiations[targetId],
+            ...changes,
+            history: [
+              ...(state.negotiations[targetId]?.history || []),
+              { timestamp: Date.now(), ...changes }
+            ]
+          }
+        }
+      })),
+
+      closeNegotiation: (targetId) => set(state => {
+        const { [targetId]: _, ...rest } = state.negotiations
+        return { negotiations: rest }
+      }),
+
+      signContract: (riderId, terms) => set(state => {
+        const isCurrentRider = state.riders.find(r => r.id === riderId)
+        if (isCurrentRider) {
+          return {
+            riders: state.riders.map(r =>
+              r.id === riderId
+                ? { ...r, contractYears: terms.years, salary: terms.salary }
+                : r
+            ),
+            budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
+          }
+        }
+        const newRider = state.riderDatabase.find(r => r.id === riderId)
+        if (!newRider) return state
+        return {
+          riders: [...state.riders, {
+            ...newRider,
+            contractYears: terms.years,
+            salary: terms.salary,
+            teamId: 'player',
+          }],
+          riderDatabase: state.riderDatabase.map(r =>
+            r.id === riderId ? { ...r, teamId: 'player' } : r
+          ),
+          budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
+        }
+      }),
+
+      releaseRider: (riderId) => set(state => ({
+        riders: state.riders.filter(r => r.id !== riderId),
+        riderDatabase: state.riderDatabase.map(r =>
+          r.id === riderId ? { ...r, teamId: null } : r
+        ),
+      })),
+
+      signStaff: (role, person, salary) => set(state => ({
+        staff: {
+          ...state.staff,
+          [role]: { ...person, salary, contractYears: 1 }
+        },
+        budget: parseFloat((state.budget - salary).toFixed(1)),
+      })),
+
+      addScoutedRider: (riderId) => set(state => ({
+        scoutedRiders: state.scoutedRiders.includes(riderId)
+          ? state.scoutedRiders
+          : [...state.scoutedRiders, riderId],
+      })),
+
     }),
     {
       name: 'motogp-manager-save',
