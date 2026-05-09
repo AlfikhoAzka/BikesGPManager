@@ -173,6 +173,7 @@ const EMPTY_STATE = {
   grid: [],
   negotiations: {},
   contractOffers: [],
+  pendingContracts: [],
   activeScouts: {},
   scoutReports: {},
   scoutedRiders: [],
@@ -535,23 +536,46 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
 
       signContract: (riderId, terms) => set(state => {
         const isCurrentRider = state.riders.find(r => r.id === riderId)
+
         if (isCurrentRider) {
           return {
             riders: state.riders.map(r =>
               r.id === riderId
-                ? { ...r, contractYears: terms.years, salary: terms.salary }
+                ? { ...r, contractYears: terms.years, salary: terms.salary, role: terms.role }
                 : r
             ),
             budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
           }
         }
+
         const newRider = state.riderDatabase.find(r => r.id === riderId)
         if (!newRider) return state
+
+        if (terms.timing === 'next_season') {
+          return {
+            pendingContracts: [
+              ...(state.pendingContracts || []),
+              {
+                riderId,
+                terms,
+                replaceRiderId: terms.replaceRider,
+                joiningSeason: state.season + 1,
+              }
+            ],
+            budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
+          }
+        }
+
+        const updatedRiders = terms.replaceRider
+          ? state.riders.filter(r => r.id !== terms.replaceRider)
+          : state.riders.slice(0, 1)
+
         return {
-          riders: [...state.riders, {
+          riders: [...updatedRiders, {
             ...newRider,
             contractYears: terms.years,
             salary: terms.salary,
+            role: terms.role || 'equal',
             teamId: 'player',
           }],
           riderDatabase: state.riderDatabase.map(r =>
