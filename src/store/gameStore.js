@@ -3,6 +3,18 @@ import { persist } from 'zustand/middleware'
 import { generatePostRaceMessages, generateSeasonStartMessages } from '../engine/messageEngine'
 import { generateRiderDatabase, pickRidersForTeam } from '../data/generateRiders'
 
+function generateScoutNotes(rider, accuracy) {
+  const notes = []
+  if (rider.riskTaking >= 17) notes.push('Highly aggressive riding style — fast but crash-prone')
+  else if (rider.riskTaking <= 8) notes.push('Very conservative — rarely crashes but may lack aggression')
+  if (rider.tyreManagement >= 17) notes.push('Exceptional tyre management — strong in long stints')
+  if (rider.setupFeedback >= 17) notes.push('Excellent technical feedback — engineers love working with him')
+  if (rider.wetPerformance >= 17) notes.push('Outstanding in wet conditions')
+  if (rider.mentalResilience <= 10) notes.push('Shows signs of pressure sensitivity — needs support')
+  if (notes.length === 0) notes.push('Well-rounded profile with no major weaknesses')
+  return notes.slice(0, 2).join('. ')
+}
+
 const DEFAULT_BIKE = {
   model: 'Desmosedici GP23',
   spec: 'satellite',
@@ -79,7 +91,11 @@ const EMPTY_STATE = {
   grid: [],
   negotiations: {},
   contractOffers: [],
+  activeScouts: {},
+  scoutReports: {},
   scoutedRiders: [],
+  agentContacts: {},
+  calendarEvents: [], 
 }
 
 export const useGameStore = create(
@@ -383,8 +399,6 @@ export const useGameStore = create(
         set({ grid })
       },
 
-      // ─── CONTRACT SYSTEM ──────────────────────────────────────────────────────
-
       startNegotiation: (targetId, type, initialOffer) => set(state => ({
         negotiations: {
           ...state.negotiations,
@@ -469,6 +483,150 @@ export const useGameStore = create(
           ? state.scoutedRiders
           : [...state.scoutedRiders, riderId],
       })),
+
+      startScout: (riderId, level) => set(state => {
+      const costs = { basic: 0, detailed: 0.3, video: 0.8 }
+      const rounds = { basic: 1, detailed: 2, video: 3 }
+      const cost = costs[level] || 0
+      if (state.budget < cost) return state
+      return {
+        budget: parseFloat((state.budget - cost).toFixed(1)),
+        activeScouts: {
+          ...state.activeScouts,
+          [riderId]: {
+            level,
+            startRound: state.round,
+            completesRound: state.round + (rounds[level] || 1),
+            cost,
+          }
+        }
+      }
+    }),
+
+    completeScout: (riderId) => set(state => {
+      const scout = state.activeScouts[riderId]
+      if (!scout) return state
+      const rider = state.riderDatabase.find(r => r.id === riderId)
+      if (!rider) return state
+
+      const analystSkill = state.staff?.dataAnalyst?.skill || 10
+      const accuracyBonus = (analystSkill / 20)
+
+      // Akurasi berdasarkan level scout + skill analis
+      const baseAccuracy = { basic: 0.5, detailed: 0.75, video: 0.95 }[scout.level] || 0.5
+      const accuracy = Math.min(0.99, baseAccuracy + accuracyBonus * 0.2)
+
+      // Generate report dengan noise berdasarkan akurasi
+      function fuzz(val) {
+        if (Math.random() < accuracy) return val
+        return Math.max(1, Math.min(20, val + Math.round((Math.random() - 0.5) * 4)))
+      }
+
+      const report = {
+        level: scout.level,
+        accuracy: Math.round(accuracy * 100),
+        completedRound: state.round,
+        // Basic info selalu akurat
+        name: rider.name,
+        nationality: rider.nationality,
+        flag: rider.flag,
+        tier: scout.level === 'basic' ? '?' : rider.tier,
+        salary: scout.level === 'basic'
+          ? `~€${(Math.round(rider.salary * 2) / 2).toFixed(1)}M`
+          : `€${rider.salary}M`,
+        // Stats dengan noise
+        qualiPace: fuzz(rider.qualiPace),
+        racePace: fuzz(rider.racePace),
+        tyreManagement: scout.level === 'basic' ? null : fuzz(rider.tyreManagement),
+        overtaking: scout.level === 'basic' ? null : fuzz(rider.overtaking),
+        defending: scout.level === 'basic' ? null : fuzz(rider.defending),
+        wetPerformance: fuzz(rider.wetPerformance),
+        consistency: scout.level === 'basic' ? null : fuzz(rider.consistency),
+        physicalStamina: scout.level !== 'video' ? null : fuzz(rider.physicalStamina),
+        cornerSpeed: scout.level !== 'video' ? null : fuzz(rider.cornerSpeed),
+        brakingAbility: scout.level !== 'video' ? null : fuzz(rider.brakingAbility),
+        setupFeedback: scout.level !== 'video' ? null : fuzz(rider.setupFeedback),
+        mentalResilience: scout.level !== 'video' ? null : fuzz(rider.mentalResilience),
+        riskTaking: scout.level !== 'video' ? null : fuzz(rider.riskTaking),
+        // Proyeksi hanya di video
+        projection: scout.level === 'video' ? {
+          peakOverall: Math.min(20, rider.overall + Math.round(Math.random() * 2)),
+          bestCircuitType: ['street', 'technical', 'high-speed', 'mixed'][Math.floor(Math.random() * 4)],
+          notes: generateScoutNotes(rider, accuracy),
+        } : null,
+      }
+
+      const { [riderId]: _, ...remainingScouts } = state.activeScouts
+      return {
+        activeScouts: remainingScouts,
+        scoutReports: { ...state.scoutReports, [riderId]: report },
+        scoutedRiders: state.scoutedRiders.includes(riderId)
+          ? state.scoutedRiders
+          : [...state.scoutedRiders, riderId],
+      }
+    }),
+
+    contactAgent: (riderId) => set(state => {
+      const rider = state.riderDatabase.find(r => r.id === riderId)
+      if (!rider) return state
+
+      const teamRep = state.team.reputation || 60
+      const riderTier = { elite: 4, good: 3, midfield: 2, backmarker: 1 }[rider.tier] || 2
+      const teamTierMap = { factory: 4, independent: 2 }
+      const teamTier = teamTierMap[state.team.type] || 2
+
+      // Interest berdasarkan reputasi tim vs tier rider
+      let baseInterest = 50
+      if (teamTier >= riderTier) baseInterest = 70
+      if (teamTier > riderTier) baseInterest = 85
+      if (teamTier < riderTier) baseInterest = 30
+      baseInterest += (teamRep - 60) * 0.3
+      baseInterest = Math.max(5, Math.min(95, baseInterest + (Math.random() - 0.5) * 20))
+
+      const interest = Math.round(baseInterest)
+      const status = interest >= 70 ? 'keen' : interest >= 40 ? 'open' : 'reluctant'
+
+      const responses = {
+        keen: [
+          `${rider.name}'s agent says he's very interested. A move to your team would be exciting for him.`,
+          `Great news — ${rider.name} is actively looking for new opportunities and your team is on his shortlist.`,
+          `${rider.name} has been following your team's progress closely. His agent says he'd welcome a conversation.`,
+        ],
+        open: [
+          `${rider.name} is open to discussions but has other options on the table. Budget will be key.`,
+          `The agent says ${rider.name} is happy where he is but wouldn't rule out a move for the right project.`,
+          `${rider.name} is evaluating his options. Your team is a possibility but not a priority right now.`,
+        ],
+        reluctant: [
+          `${rider.name}'s agent was polite but clear — he's not looking to move at this time.`,
+          `The agent says ${rider.name} is committed to his current team and isn't considering other offers.`,
+          `${rider.name} is focused on his current project. His agent suggested revisiting in the off-season.`,
+        ],
+      }
+
+      const pool = responses[status]
+      const message = pool[Math.floor(Math.random() * pool.length)]
+
+      return {
+        agentContacts: {
+          ...state.agentContacts,
+          [riderId]: {
+            interest,
+            status,
+            message,
+            contactedRound: state.round,
+          }
+        }
+      }
+    }),
+
+    addCalendarEvent: (event) => set(state => ({
+      calendarEvents: [...state.calendarEvents, { id: Date.now(), ...event }]
+    })),
+
+    removeCalendarEvent: (eventId) => set(state => ({
+      calendarEvents: state.calendarEvents.filter(e => e.id !== eventId)
+    })),
 
     }),
     {

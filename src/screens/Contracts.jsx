@@ -444,13 +444,13 @@ function NegotiationModal({ target, type, onClose, onSign }) {
   )
 }
 
-// ─── MAIN CONTRACTS SCREEN ────────────────────────────────────────────────────
-
 export default function Contracts() {
   const {
     team, budget, riders, staff, riderDatabase,
     scoutedRiders, signContract, releaseRider,
     addScoutedRider, negotiations,
+    activeScouts, scoutReports, agentContacts,
+    startScout, completeScout, contactAgent,
   } = useGameStore()
 
   const [tab, setTab] = useState('roster')
@@ -674,22 +674,47 @@ export default function Contracts() {
             </select>
           </div>
 
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Scout Levels</div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { level: 'basic', label: 'Basic Scout', cost: 'Free', time: '1 round', reveals: 'Name, nationality, quali & race pace, salary range' },
+                { level: 'detailed', label: 'Detailed Report', cost: '€0.3M', time: '2 rounds', reveals: '+ Tyre mgmt, overtaking, defending, wet performance, consistency' },
+                { level: 'video', label: 'Video Analysis', cost: '€0.8M', time: '3 rounds', reveals: '+ All stats, risk-taking, mental resilience, setup feedback, projection' },
+              ].map(s => (
+                <div key={s.level} className="bg-gray-800 rounded-xl p-3">
+                  <div className="text-base font-semibold text-white mb-1">{s.label}</div>
+                  <div className="text-sm text-green-400 font-medium">{s.cost}</div>
+                  <div className="text-sm text-gray-500">{s.time}</div>
+                  <div className="text-xs text-gray-600 mt-2 leading-relaxed">{s.reveals}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="text-sm text-gray-500">
-            {availableScouts.length} riders · Elite riders auto-scouted
+            {availableScouts.length} riders available · Elite riders show basic info automatically
           </div>
 
           <div className="space-y-2">
             {availableScouts.map(rider => {
-              const visible = isVisible(rider)
+              const activeScout = activeScouts?.[rider.id]
+              const report = scoutReports?.[rider.id]
+              const contact = agentContacts?.[rider.id]
               const hasNeg = negotiations[rider.id]
+              const isElite = rider.tier === 'elite'
+              const hasReport = !!report
+              const roundsLeft = activeScout ? activeScout.completesRound - round : 0
+
               return (
                 <div key={rider.id} className={`bg-gray-900 border rounded-xl p-4 transition-all ${
                   hasNeg ? 'border-amber-700' :
-                  rider.tier === 'elite' ? 'border-yellow-800' :
-                  visible ? 'border-blue-800' : 'border-gray-800'
+                  isElite ? 'border-yellow-800' :
+                  hasReport ? 'border-blue-800' :
+                  activeScout ? 'border-purple-800' :
+                  'border-gray-800'
                 }`}>
                   <div className="flex items-center gap-3">
-
                     <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-gray-300 flex-shrink-0">
                       #{rider.number}
                     </div>
@@ -697,75 +722,148 @@ export default function Contracts() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="text-base font-semibold text-white">{rider.flag} {rider.name}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded border ${TIER_COLOR[rider.tier]}`}>
-                          {rider.tier}
-                        </span>
-                        {rider.tier === 'elite' && (
+                        {isElite && (
                           <span className="text-xs bg-yellow-900 text-yellow-300 px-2 py-0.5 rounded border border-yellow-700">
-                            Auto-scouted
+                            Elite
+                          </span>
+                        )}
+                        {activeScout && (
+                          <span className="text-xs bg-purple-900 text-purple-300 px-2 py-0.5 rounded border border-purple-700">
+                            Scouting... {roundsLeft} round{roundsLeft !== 1 ? 's' : ''} left
+                          </span>
+                        )}
+                        {hasReport && (
+                          <span className="text-xs bg-blue-900 text-blue-300 px-2 py-0.5 rounded border border-blue-700">
+                            {report.level} report
+                          </span>
+                        )}
+                        {contact && (
+                          <span className={`text-xs px-2 py-0.5 rounded border ${
+                            contact.status === 'keen' ? 'bg-green-900 text-green-300 border-green-700' :
+                            contact.status === 'open' ? 'bg-yellow-900 text-yellow-300 border-yellow-700' :
+                            'bg-red-900 text-red-300 border-red-700'
+                          }`}>
+                            {contact.status === 'keen' ? '✓ Keen' :
+                            contact.status === 'open' ? '~ Open' : '✗ Reluctant'}
                           </span>
                         )}
                         {hasNeg && (
                           <span className="text-xs bg-amber-900 text-amber-300 px-2 py-0.5 rounded border border-amber-700">
-                            In negotiation
+                            Negotiating
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {rider.nationality} · {rider.team}
-                      </div>
-                      {visible ? (
-                        <div className="flex items-center gap-3 mt-1">
-                          <StarRating value={rider.overall} max={20} size="sm" />
-                          <span className="text-sm text-gray-400">Overall {rider.overall}/20</span>
-                          <span className="text-sm text-white font-medium">€{rider.salary}M/yr</span>
+                      <div className="text-sm text-gray-500">{rider.nationality} · {rider.team}</div>
+
+                      {/* Show basic info if elite or has report */}
+                      {(isElite || hasReport) && (
+                        <div className="text-sm text-gray-400 mt-1">
+                          {isElite ? `Salary: €${rider.salary}M/yr` :
+                          report ? `Salary: ${report.salary}` : ''}
                         </div>
-                      ) : (
-                        <div className="text-sm text-gray-600 italic mt-1">Scout to reveal full stats</div>
                       )}
                     </div>
 
-                    <div className="flex-shrink-0">
-                      {!visible ? (
+                    {/* Action buttons inline */}
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      {!activeScout && !hasReport && !isElite && (
+                        <div className="flex gap-1">
+                          {['basic', 'detailed', 'video'].map(level => {
+                            const costs = { basic: 0, detailed: 0.3, video: 0.8 }
+                            return (
+                              <button
+                                key={level}
+                                onClick={() => {
+                                  startScout(rider.id, level)
+                                  showNotif(`${level} scout started for ${rider.name}`)
+                                }}
+                                className="px-2 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors capitalize"
+                              >
+                                {level}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {activeScout && (
+                        <div className="text-xs text-purple-400 text-right">
+                          {roundsLeft} round{roundsLeft !== 1 ? 's' : ''} remaining
+                        </div>
+                      )}
+
+                      {(isElite || hasReport) && !contact && !hasNeg && (
                         <button
                           onClick={() => {
-                            addScoutedRider(rider.id)
-                            showNotif(`${rider.name} scouted — stats revealed.`)
+                            contactAgent(rider.id)
+                            showNotif(`Contacted ${rider.name}'s agent`)
                           }}
-                          className="px-4 py-2 rounded-xl text-sm font-semibold bg-blue-900 hover:bg-blue-800 text-blue-300 border border-blue-700 transition-colors whitespace-nowrap"
+                          className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-blue-900 hover:bg-blue-800 text-blue-300 border border-blue-700 transition-colors"
                         >
-                          Scout
+                          Talk to Agent
                         </button>
-                      ) : (
+                      )}
+
+                      {contact && !hasNeg && contact.status !== 'reluctant' && (
                         <button
                           onClick={() => openNegotiation(rider, 'new')}
-                          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${
-                            hasNeg
-                              ? 'bg-amber-900 border border-amber-700 text-amber-300'
-                              : 'bg-red-600 hover:bg-red-500 text-white'
-                          }`}
+                          className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-500 text-white transition-colors"
                         >
-                          {hasNeg ? 'Negotiating' : 'Talk to Agent'}
+                          Negotiate
                         </button>
                       )}
                     </div>
                   </div>
 
-                  {visible && (
-                    <div className="grid grid-cols-5 gap-2 mt-3 pt-3 border-t border-gray-800">
-                      {[
-                        { label: 'Pace', value: rider.pace },
-                        { label: 'Consistency', value: rider.consistency },
-                        { label: 'Wet', value: rider.wetSkill },
-                        { label: 'Mental', value: rider.mentalState },
-                        { label: 'Fitness', value: rider.fitness },
-                      ].map(stat => (
-                        <div key={stat.label} className="text-center bg-gray-800 rounded-lg py-1.5">
-                          <div className="text-xs text-gray-500">{stat.label}</div>
-                          <div className="text-sm font-bold text-white">{stat.value}</div>
-                          <StarRating value={stat.value} max={20} size="sm" />
+                  {/* Scout report detail */}
+                  {hasReport && (
+                    <div className="mt-3 pt-3 border-t border-gray-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                          {report.level} Report
+                        </span>
+                        <span className="text-xs text-gray-600">Accuracy: ~{report.accuracy}%</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { label: 'Quali', value: report.qualiPace },
+                          { label: 'Race', value: report.racePace },
+                          { label: 'Wet', value: report.wetPerformance },
+                          { label: 'Tyre', value: report.tyreManagement },
+                          ...(report.overtaking !== null ? [{ label: 'Attack', value: report.overtaking }] : []),
+                          ...(report.defending !== null ? [{ label: 'Defend', value: report.defending }] : []),
+                          ...(report.consistency !== null ? [{ label: 'Consistency', value: report.consistency }] : []),
+                          ...(report.cornerSpeed !== null ? [{ label: 'Corner', value: report.cornerSpeed }] : []),
+                          ...(report.brakingAbility !== null ? [{ label: 'Braking', value: report.brakingAbility }] : []),
+                          ...(report.mentalResilience !== null ? [{ label: 'Mental', value: report.mentalResilience }] : []),
+                          ...(report.riskTaking !== null ? [{ label: 'Risk', value: report.riskTaking }] : []),
+                        ].filter(s => s.value !== null).map(stat => (
+                          <div key={stat.label} className="text-center bg-gray-800 rounded-lg py-1.5 px-1">
+                            <div className="text-xs text-gray-500">{stat.label}</div>
+                            <div className="text-sm font-bold text-white">{stat.value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {report.projection && (
+                        <div className="mt-2 bg-gray-800 rounded-xl p-3">
+                          <div className="text-xs font-semibold text-gray-400 uppercase mb-1">Analyst Projection</div>
+                          <div className="text-sm text-gray-300">{report.projection.notes}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            Best at: {report.projection.bestCircuitType} circuits ·
+                            Peak potential: {report.projection.peakOverall}/20
+                          </div>
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  )}
+
+                  {/* Agent contact response */}
+                  {contact && (
+                    <div className={`mt-3 pt-3 border-t border-gray-800 text-sm leading-relaxed ${
+                      contact.status === 'keen' ? 'text-green-400' :
+                      contact.status === 'open' ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      {contact.message}
                     </div>
                   )}
                 </div>

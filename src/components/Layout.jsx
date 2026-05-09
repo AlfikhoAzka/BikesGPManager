@@ -10,6 +10,7 @@ export default function Layout({ children, currentScreen, setScreen, onMainMenu,
   { id: 'bike', label: 'Bike & Upgrades' },
   { id: 'race', label: 'Race' },
   { id: 'contracts', label: 'Contracts' },
+  { id: 'calendar', label: 'Calendar' },
   { id: 'messages', label: 'Messages' },
   ...(isFactoryTeam ? [{ id: 'rnd', label: 'R&D' }] : []),
 ]
