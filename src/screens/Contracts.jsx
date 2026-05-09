@@ -446,7 +446,7 @@ function NegotiationModal({ target, type, onClose, onSign }) {
 
 export default function Contracts() {
   const {
-    team, budget, riders, staff, riderDatabase,
+    team, budget, riders, staff, riderDatabase, round,
     scoutedRiders, signContract, releaseRider,
     addScoutedRider, negotiations,
     activeScouts, scoutReports, agentContacts,
