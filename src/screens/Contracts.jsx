@@ -223,7 +223,6 @@ function NegotiationModal({ target, type, onClose, onSign }) {
 
         <div className="px-6 py-5 space-y-5">
 
-          {/* Rider summary */}
           <div className="bg-gray-800 rounded-xl p-4 flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-red-900 flex items-center justify-center text-base font-bold text-red-300">
               {type === 'staff' ? '🔧' : `#${target.number || '?'}`}
@@ -245,7 +244,6 @@ function NegotiationModal({ target, type, onClose, onSign }) {
 
           {stage === 'offer' && (
             <>
-              {/* Contract type */}
               <div>
                 <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Contract Type</div>
                 <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
@@ -269,7 +267,6 @@ function NegotiationModal({ target, type, onClose, onSign }) {
                 </div>
               </div>
 
-              {/* Rider role — only for non-staff */}
               {type !== 'staff' && (
                 <div>
                   <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Rider Role</div>
@@ -300,7 +297,6 @@ function NegotiationModal({ target, type, onClose, onSign }) {
                 </div>
               )}
 
-              {/* Replace rider selector — only when signing new rider */}
               {type === 'new' && riders.length >= 2 && (
                 <div>
                   <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Replace Rider</div>
@@ -330,7 +326,6 @@ function NegotiationModal({ target, type, onClose, onSign }) {
                 </div>
               )}
 
-              {/* Sign timing */}
               {type === 'new' && (
                 <div>
                   <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">When to Join</div>
@@ -370,7 +365,6 @@ function NegotiationModal({ target, type, onClose, onSign }) {
                 </div>
               )}
 
-              {/* Salary + terms */}
               <div>
                 <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Terms</div>
                 <div className="space-y-4">
@@ -836,7 +830,6 @@ export default function Contracts() {
                       </div>
                       <div className="text-sm text-gray-500">{rider.nationality} · {rider.team}</div>
 
-                      {/* Show basic info if elite or has report */}
                       {(isElite || hasReport) && (
                         <div className="text-sm text-gray-400 mt-1">
                           {isElite ? `Salary: €${rider.salary}M/yr` :
@@ -845,7 +838,6 @@ export default function Contracts() {
                       )}
                     </div>
 
-                    {/* Action buttons inline */}
                     <div className="flex flex-col gap-2 flex-shrink-0">
                       {!activeScout && !hasReport && !isElite && (
                         <div className="flex gap-2">
@@ -934,7 +926,6 @@ export default function Contracts() {
                     </div>
                   )}
 
-                  {/* Agent contact response */}
                   {(() => {
                   const pendingContracts = useGameStore.getState().pendingContracts || []
                   const pending = pendingContracts.find(p => p.riderId === rider.id)
@@ -955,7 +946,6 @@ export default function Contracts() {
                   return null
                 })()}
 
-                {/* Agent contact response — hanya tampil jika belum deal */}
                 {contact && !negotiations[rider.id] && (() => {
                   const pendingContracts = useGameStore.getState().pendingContracts || []
                   const pending = pendingContracts.find(p => p.riderId === rider.id)

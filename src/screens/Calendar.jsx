@@ -58,7 +58,6 @@ export default function Calendar() {
 
   const todayStr = currentDate.split('T')[0]
 
-  // Events untuk bulan yang ditampilkan
   const monthEvents = useMemo(() => {
     return allEvents.filter(e => {
       const d = new Date(e.date)
@@ -66,18 +65,14 @@ export default function Calendar() {
     })
   }, [allEvents, viewMonth, viewYear])
 
-  // Events untuk hari yang dipilih
   const selectedEvents = allEvents.filter(e => e.date === selectedDate)
 
-  // Next important event dari hari ini
   const nextEvent = allEvents.find(e => new Date(e.date) > current)
 
-  // Hari-hari di bulan ini
   const daysInMonth = useMemo(() => {
     const first = new Date(viewYear, viewMonth, 1)
     const last = new Date(viewYear, viewMonth + 1, 0)
     const days = []
-    // Padding awal
     for (let i = 0; i < first.getDay(); i++) days.push(null)
     for (let d = 1; d <= last.getDate(); d++) {
       const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
@@ -110,7 +105,6 @@ export default function Calendar() {
     setAdvancing(true)
     advanceDay()
     setTimeout(() => setAdvancing(false), 300)
-    // Jump ke bulan baru jika perlu
     const newDate = new Date(currentDate)
     newDate.setDate(newDate.getDate() + 1)
     setViewMonth(newDate.getMonth())
@@ -142,7 +136,6 @@ export default function Calendar() {
   return (
     <div className="space-y-5">
 
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-lg font-semibold mb-1">Calendar</h2>
@@ -160,7 +153,6 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Today's status + advance controls */}
       <div className={`border rounded-xl p-4 ${
         hasImportantToday
           ? 'border-red-700 bg-red-950 bg-opacity-30'
@@ -240,9 +232,7 @@ export default function Calendar() {
 
       <div className="grid grid-cols-3 gap-5">
 
-        {/* Calendar grid */}
         <div className="col-span-2">
-          {/* Month nav */}
           <div className="flex items-center justify-between mb-4">
             <button onClick={prevMonth} className="w-9 h-9 rounded-xl bg-gray-900 border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition-colors flex items-center justify-center text-lg">
               ‹
@@ -260,14 +250,12 @@ export default function Calendar() {
             </button>
           </div>
 
-          {/* Day headers */}
           <div className="grid grid-cols-7 mb-2">
             {DAYS.map(d => (
               <div key={d} className="text-center text-xs text-gray-600 font-medium py-1">{d}</div>
             ))}
           </div>
 
-          {/* Calendar cells */}
           <div className="grid grid-cols-7 gap-1">
             {daysInMonth.map((day, i) => {
               if (!day) return <div key={`empty-${i}`} />
@@ -295,7 +283,6 @@ export default function Calendar() {
                   <div className={`text-sm font-semibold mb-1 ${day.isToday ? 'text-white' : ''}`}>
                     {day.d}
                   </div>
-                  {/* Event dots */}
                   <div className="flex flex-wrap gap-0.5">
                     {hasRace && <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />}
                     {hasQuali && <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0" />}
@@ -308,7 +295,6 @@ export default function Calendar() {
             })}
           </div>
 
-          {/* Legend */}
           <div className="flex gap-4 mt-4 flex-wrap">
             {[
               { color: 'bg-red-500', label: 'Race' },
@@ -326,7 +312,6 @@ export default function Calendar() {
           </div>
         </div>
 
-        {/* Selected day detail */}
         <div className="space-y-3">
           <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
             {selectedDate === todayStr ? 'Today' : formatDate(selectedDate + 'T00:00:00')}
@@ -396,7 +381,6 @@ export default function Calendar() {
             })
           )}
 
-          {/* Upcoming events mini list */}
           {selectedDate === todayStr && nextEvent && (
             <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Next Event</div>
@@ -414,7 +398,6 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Add event modal */}
       {showAddEvent && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-6">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm p-6">

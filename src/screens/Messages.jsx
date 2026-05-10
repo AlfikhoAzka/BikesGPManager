@@ -185,7 +185,6 @@ function InboxView() {
   return (
     <div className="grid grid-cols-5 gap-4" style={{ height: '680px' }}>
 
-      {/* Message list */}
       <div className="col-span-2 flex flex-col">
         <div className="flex items-center justify-between mb-3">
           <div className="flex gap-1 flex-wrap">
@@ -255,7 +254,6 @@ function InboxView() {
         </div>
       </div>
 
-      {/* Message detail */}
       <div className="col-span-3 bg-gray-900 border border-gray-800 rounded-xl flex flex-col overflow-hidden">
         {selectedMsg ? (
           <>
@@ -426,7 +424,6 @@ function ChatView() {
   return (
     <div className="grid grid-cols-4 gap-4" style={{ height: '680px' }}>
 
-      {/* Contact list */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl flex flex-col overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-800">
           <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Contacts</div>
@@ -463,7 +460,6 @@ function ChatView() {
         </div>
       </div>
 
-      {/* Chat window */}
       <div className="col-span-3 bg-gray-900 border border-gray-800 rounded-xl flex flex-col overflow-hidden">
         {selectedContact ? (
           <>

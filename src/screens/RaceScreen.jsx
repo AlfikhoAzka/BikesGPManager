@@ -9,17 +9,14 @@ const TYRE_BG = {
   H: 'bg-gray-800 text-gray-300'
 }
 
-// Simulasi klasemen sederhana berdasarkan hasil race
 function buildStandings(results, existingResults, riderDatabase) {
   const pointsMap = {}
 
-  // Poin dari race sebelumnya
   existingResults.forEach(r => {
     const key = r.rider
     pointsMap[key] = (pointsMap[key] || 0) + r.points
   })
 
-  // Poin race ini
   results.forEach(r => {
     const key = r.name
     pointsMap[key] = (pointsMap[key] || 0) + r.points
@@ -172,7 +169,6 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
   const riderStandings = results ? buildStandings(results, existingResults, riderDatabase) : []
   const constructorStandings = results ? buildConstructorStandings(results, existingResults) : []
 
-  // ── PRACTICE ──────────────────────────────────────────────────────────────
   if (phase === 'practice') {
     const bestLap = (Math.random() * 0.3 + 1.38).toFixed(3)
     const tyreRec = ['Soft', 'Medium', 'Hard'][Math.floor(Math.random() * 3)]
@@ -219,7 +215,6 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
     )
   }
 
-  // ── QUALIFYING ────────────────────────────────────────────────────────────
   if (phase === 'qualifying') {
     const qualiResults = riders.map((rider, i) => ({
       rider,
@@ -264,7 +259,6 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
     )
   }
 
-  // ── RACE ──────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
 
@@ -396,7 +390,6 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
               })()}
             </div>
 
-            {/* Tabs */}
             <div className="flex gap-2">
               {['Race Result', 'Rider Standings', 'Constructor Standings'].map((t, i) => {
                 const id = ['race', 'riders', 'constructors'][i]
@@ -411,7 +404,6 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
               })}
             </div>
 
-            {/* Race result */}
             {showStandings === 'race' && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                 <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wider">
@@ -441,7 +433,6 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
               </div>
             )}
 
-            {/* Rider standings */}
             {showStandings === 'riders' && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                 <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wider">
@@ -469,7 +460,6 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
               </div>
             )}
 
-            {/* Constructor standings */}
             {showStandings === 'constructors' && (
               <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                 <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wider">
