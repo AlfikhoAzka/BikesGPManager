@@ -84,25 +84,21 @@ export default function BikeUpgrade() {
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="bg-amber-950 border border-amber-800 rounded-xl p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="text-base font-semibold text-amber-300 mb-1">Upgrade to Factory Spec?</div>
-            <div className="text-sm text-amber-500 leading-relaxed">
-              Finish P5 or better in {factoryTarget} consecutive races + top-4 in championship.
-            </div>
-          </div>
-          <div className="text-right ml-4">
-            <div className="text-3xl font-bold text-amber-300">{factoryProgress}/{factoryTarget}</div>
-            <div className="text-sm text-amber-600">races met</div>
+      </div>{bike.spec === 'factory' ? (
+        <div className="bg-purple-950 border border-purple-800 rounded-xl p-4">
+          <div className="text-base font-semibold text-purple-300 mb-1">🏭 Factory Spec</div>
+          <div className="text-sm text-purple-400 leading-relaxed">
+            You're running full factory specification. Use the R&D screen to develop the bike further.
           </div>
         </div>
-        <div className="mt-3 bg-amber-900 rounded-full h-1.5">
-          <div className="bg-amber-400 h-1.5 rounded-full" style={{ width: `${(factoryProgress / factoryTarget) * 100}%` }} />
+      ) : (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div className="text-base font-semibold text-white mb-1">Want better machinery?</div>
+          <div className="text-sm text-gray-400 leading-relaxed">
+            As an independent team, you can apply for a manufacturer deal in the Contracts screen to access better bike specifications next season.
+          </div>
         </div>
-      </div>
+      )}
 
       <div>
         <h3 className="text-base font-semibold text-gray-400 uppercase tracking-wider mb-3">Available Upgrades</h3>

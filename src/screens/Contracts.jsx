@@ -819,16 +819,6 @@ export default function Contracts() {
                             {report.level} report
                           </span>
                         )}
-                        {contact && !isPending(rider.id) && !isCurrentRider(rider.id) && (
-                          <div className="mt-3 pt-3 border-t border-gray-800">
-                            <div className={`text-sm leading-relaxed ${
-                              contact.status === 'keen' ? 'text-green-400' :
-                              contact.status === 'open' ? 'text-yellow-400' : 'text-red-400'
-                            }`}>
-                              {contact.message}
-                            </div>
-                          </div>
-                        )}
 
                         {isPending(rider.id) && !isCurrentRider(rider.id) && (
                           <div className="mt-3 pt-3 border-t border-gray-800">
