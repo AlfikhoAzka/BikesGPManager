@@ -154,7 +154,9 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
 
   function completeNonRacePhase() {
     const result = generateSessionResult(currentPhase)
-    setPhaseResults(prev => ({ ...prev, [currentPhase]: result }))
+    const thisPhase = currentPhase
+    setPhaseResults(prev => ({ ...prev, [thisPhase]: result }))
+    advanceDay()
 
     const nextIndex = PHASE_ORDER.indexOf(currentPhase) + 1
     if (nextIndex < PHASE_ORDER.length) {
@@ -163,7 +165,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
     advanceDay()
   }
 
-  // Race simulation
   function startRace() {
     const state = initRace(round, riders, bike, staff, team.name)
     setRaceState(state)
@@ -243,10 +244,9 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
       )
     : []
 
-  const phaseInfo = PHASE_INFO[currentPhase]
+  const phaseInfo = PHASE_INFO[currentPhase] || PHASE_INFO.fp1
   const sessionResult = phaseResults[currentPhase]
 
-  // ── SESSION RESULT VIEW (FP1/FP2/Qualifying/Sprint) ────────────────────────
   if (currentPhase !== 'race') {
     const prevResult = phaseResults[currentPhase]
 
@@ -268,7 +268,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
 
         <div className="flex-1 p-6 space-y-5 overflow-y-auto max-w-3xl mx-auto w-full">
 
-          {/* Phase progress */}
           <div className="flex gap-2 flex-wrap">
             {PHASE_ORDER.map(p => {
               const done = PHASE_ORDER.indexOf(p) < PHASE_ORDER.indexOf(currentPhase)

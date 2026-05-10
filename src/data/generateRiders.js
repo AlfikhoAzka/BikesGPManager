@@ -551,6 +551,14 @@ const MOTOGP_2026_RIDERS = [
   },
 ]
 
+export const TEST_RIDERS = [
+  { name: 'Michele Pirro', number: 51, nationality: 'Italy', flag: '🇮🇹', manufacturer: 'Ducati', role: 'Test Rider', overall: 14, pace: 14, tier: 'good' },
+  { name: 'Stefan Bradl', number: 6, nationality: 'Germany', flag: '🇩🇪', manufacturer: 'Honda', role: 'Test Rider', overall: 13, pace: 13, tier: 'good' },
+  { name: 'Cal Crutchlow', number: 35, nationality: 'United Kingdom', flag: '🇬🇧', manufacturer: 'Yamaha', role: 'Test Rider', overall: 14, pace: 14, tier: 'good' },
+  { name: 'Dani Pedrosa', number: 26, nationality: 'Spain', flag: '🇪🇸', manufacturer: 'KTM', role: 'Test Rider', overall: 15, pace: 15, tier: 'good' },
+  { name: 'Lorenzo Savadori', number: 32, nationality: 'Italy', flag: '🇮🇹', manufacturer: 'Aprilia', role: 'Test Rider', overall: 13, pace: 13, tier: 'good' },
+]
+
 function calcOverall(r) {
   const attrs = [
     r.qualiPace, r.racePace, r.tyreManagement, r.overtaking,

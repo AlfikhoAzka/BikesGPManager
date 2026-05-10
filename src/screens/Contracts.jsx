@@ -122,7 +122,7 @@ const CONTRACT_CLAUSES = [
 ]
 
 function NegotiationModal({ target, type, onClose, onSign }) {
-  const { budget, team, riders, negotiations, startNegotiation, closeNegotiation } = useGameStore()
+  const { budget, team, riders, negotiations, startNegotiation, closeNegotiation, pendingContracts } = useGameStore()
 
   const availableClauses = CONTRACT_CLAUSES.filter(c =>
     c.availableFor.includes(team.type) || c.availableFor.includes('independent')
@@ -192,14 +192,38 @@ function NegotiationModal({ target, type, onClose, onSign }) {
   }
 
   function finalizeAccept() {
-    if (signTiming === 'immediate' && !isFreeAgent) {
-      setShowReplaceWarning(true)
-      return
-    }
-    onSign(target.id, { salary: effectiveSalary, years, signingBonus, clause: selectedClause, role: riderRole, timing: signTiming, replaceRider })
-    closeNegotiation(target.id)
-    onClose()
+  if (signTiming === 'immediate' && !isFreeAgent) {
+    setShowReplaceWarning(true)
+    return
   }
+  onSign(target.id, {
+    salary: effectiveSalary,
+    years,
+    signingBonus,
+    clause: selectedClause,
+    role: riderRole,
+    timing: type === 'renewal' ? 'immediate' : signTiming,
+    replaceRider,
+    type,
+  })
+  closeNegotiation(target.id)
+  onClose()
+}
+
+function acceptCounter() {
+  const terms = {
+    ...agentResponse.counter,
+    signingBonus,
+    clause: selectedClause,
+    role: riderRole,
+    timing: type === 'renewal' ? 'immediate' : signTiming,
+    replaceRider,
+    type,
+  }
+  onSign(target.id, terms)
+  closeNegotiation(target.id)
+  onClose()
+}
 
   function confirmImmediateSign() {
     onSign(target.id, { salary: effectiveSalary, years, signingBonus, clause: selectedClause, role: riderRole, timing: 'immediate', replaceRider })
@@ -301,27 +325,38 @@ function NegotiationModal({ target, type, onClose, onSign }) {
                 <div>
                   <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Replace Rider</div>
                   <div className="grid grid-cols-2 gap-2">
-                    {riders.map(r => (
-                      <div
-                        key={r.id}
-                        onClick={() => setReplaceRider(r.id)}
-                        className={`border rounded-xl p-3 cursor-pointer transition-all ${
-                          replaceRider === r.id
-                            ? 'border-red-600 bg-red-950 bg-opacity-30'
-                            : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                        }`}
-                      >
-                        <div className="text-sm font-semibold text-white">#{r.number} {r.name}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          {r.contractYears} yr remaining · €{r.salary}M/yr
+                    {riders.map(r => {
+                      const seatTaken = (pendingContracts || []).some(
+                        p => p.terms?.replaceRider === r.id || p.riderId === r.id
+                      )
+                      return (
+                        <div
+                          key={r.id}
+                          onClick={() => !seatTaken && setReplaceRider(r.id)}
+                          className={`border rounded-xl p-3 transition-all ${
+                            seatTaken
+                              ? 'border-gray-800 bg-gray-800 opacity-40 cursor-not-allowed'
+                              : replaceRider === r.id
+                              ? 'border-red-600 bg-red-950 bg-opacity-30 cursor-pointer'
+                              : 'border-gray-800 bg-gray-900 hover:border-gray-700 cursor-pointer'
+                          }`}
+                        >
+                          <div className="text-sm font-semibold text-white">#{r.number} {r.name}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {r.contractYears} yr · €{r.salary}M/yr
+                          </div>
+                          {seatTaken ? (
+                            <div className="text-xs text-gray-600 mt-1 font-medium">Seat already filled</div>
+                          ) : (
+                            <div className={`text-xs mt-1 font-medium ${
+                              r.contractYears <= 1 ? 'text-red-400' : 'text-yellow-400'
+                            }`}>
+                              {r.contractYears <= 1 ? 'Expiring' : 'Contract active'}
+                            </div>
+                          )}
                         </div>
-                        <div className={`text-xs mt-1 font-medium ${
-                          r.contractYears <= 1 ? 'text-red-400' : 'text-yellow-400'
-                        }`}>
-                          {r.contractYears <= 1 ? 'Expiring — easy to replace' : 'Contract active'}
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -609,12 +644,39 @@ export default function Contracts() {
       </div>
 
       {tab === 'roster' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {riders.map(rider => {
             const hasNeg = negotiations[rider.id]
+            const isPendingRenewal = (pendingContracts || []).some(
+              p => p.riderId === rider.id && p.terms?.type === 'renewal'
+            )
+
+            const attrs = [
+              { label: 'Quali Pace', value: rider.qualiPace ?? rider.pace },
+              { label: 'Race Pace', value: rider.racePace ?? rider.pace },
+              { label: 'Tyre Mgmt', value: rider.tyreManagement },
+              { label: 'Overtaking', value: rider.overtaking },
+              { label: 'Defending', value: rider.defending },
+              { label: 'Wet', value: rider.wetPerformance ?? rider.wetSkill },
+              { label: 'Consistency', value: rider.consistency },
+              { label: 'Stamina', value: rider.physicalStamina ?? rider.fitness },
+              { label: 'Corner Spd', value: rider.cornerSpeed },
+              { label: 'Braking', value: rider.brakingAbility },
+              { label: 'Setup FB', value: rider.setupFeedback },
+              { label: 'Mental', value: rider.mentalResilience ?? rider.mentalState },
+            ].filter(a => a.value !== undefined && a.value !== null)
+
+            const riskLabel = (val) => {
+              if (!val) return null
+              if (val >= 17) return { text: 'Aggressive', color: 'text-red-400' }
+              if (val >= 13) return { text: 'Balanced', color: 'text-yellow-400' }
+              return { text: 'Conservative', color: 'text-green-400' }
+            }
+            const risk = riskLabel(rider.riskTaking)
+
             return (
               <div key={rider.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-4 mb-4">
                   <div className="w-12 h-12 rounded-full bg-red-900 flex items-center justify-center text-base font-bold text-red-300 flex-shrink-0">
                     #{rider.number}
                   </div>
@@ -623,7 +685,9 @@ export default function Contracts() {
                       <div>
                         <div className="text-base font-semibold text-white">{rider.flag} {rider.name}</div>
                         <div className="text-sm text-gray-500">{rider.nationality} · {rider.tier}</div>
-                        <StarRating value={rider.overall} max={20} size="md" />
+                        {risk && (
+                          <div className={`text-sm font-medium mt-0.5 ${risk.color}`}>{risk.text} style</div>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="text-base font-semibold text-white">€{rider.salary}M/yr</div>
@@ -636,42 +700,42 @@ export default function Contracts() {
                         </div>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-5 gap-2 mt-3">
-                      {[
-                        { label: 'Pace', value: rider.pace },
-                        { label: 'Consistency', value: rider.consistency },
-                        { label: 'Wet', value: rider.wetSkill },
-                        { label: 'Mental', value: rider.mentalState },
-                        { label: 'Fitness', value: rider.fitness },
-                      ].map(stat => (
-                        <div key={stat.label} className="text-center bg-gray-800 rounded-lg py-2">
-                          <div className="text-xs text-gray-500 mb-0.5">{stat.label}</div>
-                          <div className="text-sm font-bold text-white">{stat.value}</div>
-                          <StarRating value={stat.value} max={20} size="sm" />
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={() => openNegotiation(rider, 'renewal')}
-                        className={`flex-1 py-2.5 rounded-xl text-base font-semibold transition-colors ${
-                          hasNeg
-                            ? 'bg-amber-900 border border-amber-700 text-amber-300'
-                            : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
-                        }`}
-                      >
-                        {hasNeg ? 'In Negotiation' : 'Negotiate Renewal'}
-                      </button>
-                      <button
-                        onClick={() => setConfirmRelease(rider)}
-                        className="px-4 py-2.5 rounded-xl text-base text-red-400 hover:bg-red-950 border border-gray-800 transition-colors"
-                      >
-                        Release
-                      </button>
-                    </div>
                   </div>
+                </div>
+
+                {/* Attributes grid */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {attrs.map(attr => (
+                    <div key={attr.label} className="bg-gray-800 rounded-lg px-3 py-2 flex items-center justify-between">
+                      <span className="text-sm text-gray-400">{attr.label}</span>
+                      <div className="flex items-center gap-1.5">
+                        <StarRating value={attr.value} max={20} size="sm" />
+                        <span className="text-sm font-bold text-white w-4 text-right">{attr.value}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => openNegotiation({ ...rider, negotiationType: 'renewal' }, 'renewal')}
+                    disabled={isPendingRenewal}
+                    className={`flex-1 py-2.5 rounded-xl text-base font-semibold transition-colors ${
+                      isPendingRenewal
+                        ? 'bg-green-900 border border-green-700 text-green-400 cursor-not-allowed'
+                        : hasNeg
+                        ? 'bg-amber-900 border border-amber-700 text-amber-300'
+                        : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
+                    }`}
+                  >
+                    {isPendingRenewal ? '✓ Renewal Agreed' : hasNeg ? 'In Negotiation' : 'Negotiate Renewal'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmRelease(rider)}
+                    className="px-4 py-2.5 rounded-xl text-base text-red-400 hover:bg-red-950 border border-gray-800 transition-colors"
+                  >
+                    Release
+                  </button>
                 </div>
               </div>
             )

@@ -58,7 +58,7 @@ export default function Layout({ children, currentScreen, setScreen, onMainMenu,
       {showReset && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-gray-900 border border-gray-700 rounded-xl p-6 w-96">
-            <div className="text-xl font-semibold mb-2">Pause Menu</div>
+            <div className="text-xl font-semibold mb-2">Menu</div>
             <div className="text-base text-gray-400 mb-6">Your progress is auto-saved.</div>
             <div className="flex flex-col gap-2">
               <button

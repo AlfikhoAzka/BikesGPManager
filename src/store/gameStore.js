@@ -469,7 +469,7 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
       signContract: (riderId, terms) => set(state => {
         const isCurrentRider = state.riders.find(r => r.id === riderId)
 
-        if (isCurrentRider) {
+        if (isCurrentRider && terms.type === 'renewal') {
           const renewalMsg = {
             id: Math.floor(Date.now() + Math.random() * 1000),
             read: false,
@@ -480,7 +480,7 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
             priority: 'normal',
             subject: 'Contract renewed — thank you!',
             preview: 'Really happy to be staying with the team.',
-            body: `Hi Manager,\n\nI just wanted to say thank you for renewing my contract. I'm really happy to be staying with ${state.team.name} for another ${terms.years} year${terms.years > 1 ? 's' : ''}.\n\nI'll give everything I have to make sure we achieve great results together.\n\n— ${isCurrentRider.name}`,
+            body: `Hi Manager,\n\nThank you for renewing my contract. I'm delighted to be staying with ${state.team.name} for another ${terms.years} year${terms.years > 1 ? 's' : ''}.\n\nI'll give everything I have!\n\n— ${isCurrentRider.name}`,
             actions: [],
           }
           return {
@@ -506,15 +506,11 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
           fromId: `rider_${riderId}`,
           type: 'rider',
           priority: 'normal',
-          subject: terms.timing === 'immediate'
-            ? 'Excited to join the team!'
-            : 'Looking forward to next season!',
-          preview: terms.timing === 'immediate'
-            ? "Can't wait to get started."
-            : "Really excited about joining the team next year.",
+          subject: terms.timing === 'immediate' ? 'Excited to join!' : 'Looking forward to next season!',
+          preview: 'Really excited about this opportunity.',
           body: terms.timing === 'immediate'
-            ? `Hi Manager,\n\nI'm thrilled to be joining ${state.team.name} immediately. This is a great opportunity and I can't wait to get on the bike and start working with the team.\n\nLet's make the most of the rest of the season!\n\n— ${newRider.name}`
-            : `Hi Manager,\n\nThank you for the contract offer. I'm really excited to be joining ${state.team.name} for the ${state.season + 1} season.\n\nI've been following the team's progress and I'm confident we can achieve great things together. See you soon!\n\n— ${newRider.name}`,
+            ? `Hi Manager,\n\nI'm thrilled to be joining ${state.team.name} immediately!\n\n— ${newRider.name}`
+            : `Hi Manager,\n\nThank you for the contract. I'm really excited to join ${state.team.name} for ${state.season + 1}!\n\n— ${newRider.name}`,
           actions: [],
         }
 
@@ -522,8 +518,8 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
 
         if (terms.replaceRider && terms.timing === 'next_season') {
           const replacedRider = state.riders.find(r => r.id === terms.replaceRider)
-          if (replacedRider && replacedRider.mentalState >= 14) {
-            const replacedMsg = {
+          if (replacedRider && (replacedRider.mentalResilience ?? replacedRider.mentalState ?? 14) >= 14) {
+            messages.push({
               id: Math.floor(Date.now() + Math.random() * 1001),
               read: false,
               timestamp: new Date().toISOString(),
@@ -533,10 +529,9 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
               priority: 'high',
               subject: 'I heard the news...',
               preview: "I thought we had a future together.",
-              body: `Manager,\n\nI've just heard that I won't be part of the team next season. I won't pretend I'm not disappointed — I genuinely believed in this project and thought we were building something special together.\n\nI gave everything for this team and I'm proud of what we achieved. I hope the new rider serves you well.\n\nGood luck for the future.\n\n— ${replacedRider.name}`,
+              body: `Manager,\n\nI've just heard I won't be part of the team next season. I'm disappointed — I believed in this project.\n\nI gave everything for this team. I wish you well.\n\n— ${replacedRider.name}`,
               actions: [],
-            }
-            messages.push(replacedMsg)
+            })
           }
         }
 

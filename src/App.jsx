@@ -82,5 +82,5 @@ export default function App() {
       {screen === 'messages' && <Messages />}
       {screen === 'rnd' && <RnD />}
     </Layout>
-  )
+)
 }
