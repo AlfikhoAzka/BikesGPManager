@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGameStore } from './store/gameStore'
 import MainMenu from './screens/MainMenu'
 import CreateManager from './screens/CreateManager'
@@ -18,7 +18,15 @@ export default function App() {
   const [screen, setScreen] = useState('dashboard')
   const [pendingManager, setPendingManager] = useState(null)
   const [showRace, setShowRace] = useState(false)
-  const [racePhase, setRacePhase] = useState('race') // 'practice' | 'qualifying' | 'race'
+  const [racePhase, setRacePhase] = useState('race')
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail === 'messages') setScreen('messages')
+    }
+    document.addEventListener('navigate', handler)
+    return () => document.removeEventListener('navigate', handler)
+  }, [])
 
   function handleNewGame() { setAppState('create-manager') }
 

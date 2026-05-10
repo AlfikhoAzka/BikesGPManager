@@ -72,24 +72,28 @@ export default function Dashboard({ onStartRace }) {
     team, budget, riders, bike, staff, round, season,
     manager, championshipPoints, championshipPosition,
     currentDate, advanceDay, advanceToNextEvent,
-    calendarEvents,
+    calendarEvents, messages, unreadCount,
   } = useGameStore()
 
   const bikeOverall = Math.round(
     (bike.topSpeed + bike.aero + bike.chassis + bike.braking + bike.electronics) / 5
   )
-  const todayStr = currentDate ? currentDate.split('T')[0] : ''
+  const todayStr = currentDate ? currentDate.split('T')[0] : '2026-01-01'
   const schedule = buildSchedule(season)
-
-  const allEvents = [...schedule, ...(calendarEvents || [])]
-
+  const allEvents = [...(schedule || []), ...(calendarEvents || [])]
   const todayEvents = allEvents.filter(e => e.date === todayStr)
   const todayRaceEvent = todayEvents.find(e =>
     ['practice', 'qualifying', 'race'].includes(e.type)
   )
   const nextEvent = allEvents
-    .filter(e => new Date(e.date + 'T00:00:00') > new Date(currentDate || '2026-03-01'))
+    .filter(e => new Date(e.date + 'T00:00:00') > new Date(currentDate || '2026-01-01'))
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0]
+
+  const requiredActions = messages.filter(m =>
+    !m.read && m.actions && m.actions.length > 0 &&
+    ['media', 'sponsor'].includes(m.type)
+  )
+  const hasRequiredAction = requiredActions.length > 0
 
     function handleAdvance() {
       if (todayRaceEvent) {
@@ -140,38 +144,38 @@ export default function Dashboard({ onStartRace }) {
 
           <div className="flex flex-col gap-2">
             {todayRaceEvent ? (
-              <>
-                <button
-                  onClick={() => onStartRace?.(todayRaceEvent.type)}
-                  className="px-5 py-2.5 rounded-xl text-base font-semibold bg-red-600 hover:bg-red-500 text-white transition-colors"
-                >
-                  {todayRaceEvent.type === 'practice' ? '🔧 Practice Day' :
-                  todayRaceEvent.type === 'qualifying' ? '⏱️ Qualifying' : '🏁 Race Day'}
-                </button>
-                <button
-                  onClick={() => advanceDay?.()}
-                  className="px-5 py-2 rounded-xl text-sm bg-gray-800 hover:bg-gray-700 text-gray-500 border border-gray-700 transition-colors"
-                >
-                  Skip event
-                </button>
-              </>
+              <button
+                onClick={() => onStartRace?.(todayRaceEvent.type)}
+                className="px-5 py-2.5 rounded-xl text-base font-semibold bg-red-600 hover:bg-red-500 text-white transition-colors"
+              >
+                {todayRaceEvent.type === 'practice' ? '🔧 Practice Day' :
+                todayRaceEvent.type === 'qualifying' ? '⏱️ Qualifying' : '🏁 Race Day'}
+              </button>
+            ) : hasRequiredAction ? (
+              <button
+                onClick={() => {
+                  document.dispatchEvent(new CustomEvent('navigate', { detail: 'messages' }))
+                }}
+                className="px-5 py-2.5 rounded-xl text-base font-semibold bg-amber-600 hover:bg-amber-500 text-white transition-colors animate-pulse"
+              >
+                ! Take Action
+              </button>
             ) : (
-              <>
-                <button
-                  onClick={() => advanceDay?.()}
-                  className="px-5 py-2.5 rounded-xl text-base font-semibold bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 transition-colors"
-                >
-                  + 1 Day
-                </button>
-                {nextEvent && (
-                  <button
-                    onClick={() => advanceToNextEvent?.()}
-                    className="px-5 py-2 rounded-xl text-sm bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-700 transition-colors text-center"
-                  >
-                    Skip → {nextEvent.circuit || nextEvent.label?.split('—')[1]?.trim() || nextEvent.label}
-                  </button>
-                )}
-              </>
+              <button
+                onClick={() => advanceDay?.()}
+                className="px-5 py-2.5 rounded-xl text-base font-semibold bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 transition-colors"
+              >
+                Continue
+              </button>
+            )}
+
+            {nextEvent && !todayRaceEvent && (
+              <button
+                onClick={() => advanceToNextEvent?.()}
+                className="px-4 py-2 rounded-xl text-sm bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-700 transition-colors text-center"
+              >
+                Skip → {nextEvent.circuit || nextEvent.label?.split('—')[1]?.trim() || nextEvent.label}
+              </button>
             )}
           </div>
         </div>

@@ -515,7 +515,8 @@ export default function Contracts() {
     scoutedRiders, signContract, releaseRider,
     addScoutedRider, negotiations,
     activeScouts, scoutReports, agentContacts,
-    startScout, completeScout, contactAgent,
+    startScout, contactAgent,
+    pendingContracts,
   } = useGameStore()
 
   const [tab, setTab] = useState('roster')
@@ -547,6 +548,12 @@ export default function Contracts() {
     showNotif(`${rider.name} released.`, 'error')
     setConfirmRelease(null)
   }
+
+  const isPending = (riderId) =>
+  (pendingContracts || []).some(p => p.riderId === riderId)
+
+  const isCurrentRider = (riderId) =>
+    riders.some(r => r.id === riderId)
 
   const autoScouted = riderDatabase.filter(r => r.tier === 'elite').map(r => r.id)
   const isVisible = (rider) =>
@@ -812,15 +819,25 @@ export default function Contracts() {
                             {report.level} report
                           </span>
                         )}
-                        {contact && (
-                          <span className={`text-xs px-2 py-0.5 rounded border ${
-                            contact.status === 'keen' ? 'bg-green-900 text-green-300 border-green-700' :
-                            contact.status === 'open' ? 'bg-yellow-900 text-yellow-300 border-yellow-700' :
-                            'bg-red-900 text-red-300 border-red-700'
-                          }`}>
-                            {contact.status === 'keen' ? '✓ Keen' :
-                            contact.status === 'open' ? '~ Open' : '✗ Reluctant'}
-                          </span>
+                        {contact && !isPending(rider.id) && !isCurrentRider(rider.id) && (
+                          <div className="mt-3 pt-3 border-t border-gray-800">
+                            <div className={`text-sm leading-relaxed ${
+                              contact.status === 'keen' ? 'text-green-400' :
+                              contact.status === 'open' ? 'text-yellow-400' : 'text-red-400'
+                            }`}>
+                              {contact.message}
+                            </div>
+                          </div>
+                        )}
+
+                        {isPending(rider.id) && !isCurrentRider(rider.id) && (
+                          <div className="mt-3 pt-3 border-t border-gray-800">
+                            <div className="bg-green-950 border border-green-700 rounded-xl px-4 py-3">
+                              <div className="text-base font-semibold text-green-300">
+                                ✓ {rider.name} has accepted your contract and will be your rider next season
+                              </div>
+                            </div>
+                          </div>
                         )}
                         {hasNeg && (
                           <span className="text-xs bg-amber-900 text-amber-300 px-2 py-0.5 rounded border border-amber-700">
@@ -838,9 +855,21 @@ export default function Contracts() {
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      {!activeScout && !hasReport && !isElite && (
-                        <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 flex-shrink-0 items-end">
+                      {isCurrentRider(rider.id) && (
+                        <span className="text-xs bg-red-900 text-red-300 px-2 py-1 rounded border border-red-700">
+                          Current rider
+                        </span>
+                      )}
+
+                      {isPending(rider.id) && !isCurrentRider(rider.id) && (
+                        <span className="text-xs bg-green-900 text-green-300 px-2 py-1 rounded border border-green-700">
+                          ✓ Signed for next season
+                        </span>
+                      )}
+
+                      {!isCurrentRider(rider.id) && !isPending(rider.id) && !activeScout && !hasReport && !isElite && (
+                        <div className="flex gap-1">
                           <button
                             onClick={() => { startScout(rider.id, 'basic'); showNotif(`Basic scout started — ${rider.name}`) }}
                             className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors"
@@ -848,7 +877,7 @@ export default function Contracts() {
                             Basic
                           </button>
                           <button
-                            onClick={() => { startScout(rider.id, 'detailed'); showNotif(`Detailed report commissioned — ${rider.name}`) }}
+                            onClick={() => { startScout(rider.id, 'detailed'); showNotif(`Detailed report — ${rider.name}`) }}
                             className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-blue-900 hover:bg-blue-800 text-blue-300 border border-blue-700 transition-colors"
                           >
                             Detailed
@@ -857,24 +886,19 @@ export default function Contracts() {
                       )}
 
                       {activeScout && (
-                        <div className="text-xs text-purple-400 text-right">
-                          {roundsLeft} round{roundsLeft !== 1 ? 's' : ''} remaining
-                        </div>
+                        <span className="text-xs text-purple-400">{roundsLeft} round{roundsLeft !== 1 ? 's' : ''} left</span>
                       )}
 
-                      {(isElite || hasReport) && !contact && !hasNeg && (
+                      {(isElite || hasReport) && !contact && !hasNeg && !isPending(rider.id) && !isCurrentRider(rider.id) && (
                         <button
-                          onClick={() => {
-                            contactAgent(rider.id)
-                            showNotif(`Contacted ${rider.name}'s agent`)
-                          }}
+                          onClick={() => { contactAgent(rider.id); showNotif(`Contacted ${rider.name}'s agent`) }}
                           className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-blue-900 hover:bg-blue-800 text-blue-300 border border-blue-700 transition-colors"
                         >
                           Talk to Agent
                         </button>
                       )}
 
-                      {contact && !hasNeg && contact.status !== 'reluctant' && (
+                      {contact && !hasNeg && !isPending(rider.id) && !isCurrentRider(rider.id) && contact.status !== 'reluctant' && (
                         <button
                           onClick={() => openNegotiation(rider, 'new')}
                           className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-500 text-white transition-colors"

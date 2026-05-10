@@ -205,10 +205,24 @@ export default function RaceScreen({ phase = 'race', onFinished }) {
           </div>
 
           <button
-            onClick={onFinished}
+            onClick={() => {
+              advanceDay()
+              onFinished()
+            }}
             className="w-full py-3 bg-blue-700 hover:bg-blue-600 text-white rounded-xl text-base font-semibold transition-colors"
           >
             Complete Practice Day →
+          </button>
+
+          // Qualifying — tombol Complete  
+          <button
+            onClick={() => {
+              advanceDay()
+              onFinished()
+            }}
+            className="w-full py-3 bg-yellow-700 hover:bg-yellow-600 text-white rounded-xl text-base font-semibold transition-colors"
+          >
+            Complete Qualifying →
           </button>
         </div>
       </div>

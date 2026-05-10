@@ -74,7 +74,7 @@ const EMPTY_STATE = {
   championshipPosition: 20,
   boardTarget: null,
   boardPressure: 0,
-  currentDate: new Date('2026-03-01').toISOString(),
+  currentDate: new Date('2026-01-01').toISOString(),
   currentDayPhase: 'free',
   satelliteTeams: [],
   team: {
@@ -275,6 +275,7 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
 
         set({
           ...EMPTY_STATE,
+          currentDate: new Date('2026-01-01').toISOString(),
           manager: {
             name: manager.name,
             age: manager.age,
