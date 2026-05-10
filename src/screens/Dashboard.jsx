@@ -83,24 +83,20 @@ export default function Dashboard({ onStartRace }) {
 
   const allEvents = [...schedule, ...(calendarEvents || [])]
 
-  const todayEvents = allEvents.filter(
-    e => e.date === todayStr
+  const todayEvents = allEvents.filter(e => e.date === todayStr)
+  const todayRaceEvent = todayEvents.find(e =>
+    ['practice', 'qualifying', 'race'].includes(e.type)
   )
-
-  const todayRaceEvent = todayEvents.find(
-    e => ['practice', 'qualifying', 'race'].includes(e.type)
-  )
-
   const nextEvent = allEvents
-    .filter(e => new Date(e.date + 'T12:00:00') > new Date(currentDate))
+    .filter(e => new Date(e.date + 'T00:00:00') > new Date(currentDate || '2026-03-01'))
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0]
 
-  function handleAdvance() {
-    if (todayRaceEvent) {
-      onStartRace?.(todayRaceEvent.type)
-    } else {
-      advanceDay()
-    }
+    function handleAdvance() {
+      if (todayRaceEvent) {
+        onStartRace?.(todayRaceEvent.type)
+      } else {
+        advanceDay()
+      }
   }
 
   function handleSkip() {
@@ -143,42 +139,39 @@ export default function Dashboard({ onStartRace }) {
           )}
 
           <div className="flex flex-col gap-2">
-            <button
-              onClick={handleAdvance}
-              className={`px-5 py-2.5 rounded-xl text-base font-semibold transition-colors ${
-                todayRaceEvent
-                  ? 'bg-red-600 hover:bg-red-500 text-white'
-                  : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
-              }`}
-            >
-              {todayRaceEvent
-                ? `${todayRaceEvent.icon || '🏁'} ${
-                    todayRaceEvent.type.charAt(0).toUpperCase() +
-                    todayRaceEvent.type.slice(1)
-                  }`
-                : '+ 1 Day →'}
-            </button>
-
-            {nextEvent && !todayRaceEvent && (
-              <button
-                onClick={handleSkip}
-                className="px-5 py-2.5 rounded-xl text-base font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-700 transition-colors text-center"
-              >
-                Skip → {
-                  nextEvent.circuit ||
-                  nextEvent.label?.split('—')[1]?.trim() ||
-                  nextEvent.label
-                }
-              </button>
-            )}
-
-            {todayRaceEvent && (
-              <button
-                onClick={() => advanceDay()}
-                className="px-5 py-2.5 rounded-xl text-sm bg-gray-800 hover:bg-gray-700 text-gray-500 border border-gray-700 transition-colors"
-              >
-                Skip this event
-              </button>
+            {todayRaceEvent ? (
+              <>
+                <button
+                  onClick={() => onStartRace?.(todayRaceEvent.type)}
+                  className="px-5 py-2.5 rounded-xl text-base font-semibold bg-red-600 hover:bg-red-500 text-white transition-colors"
+                >
+                  {todayRaceEvent.type === 'practice' ? '🔧 Practice Day' :
+                  todayRaceEvent.type === 'qualifying' ? '⏱️ Qualifying' : '🏁 Race Day'}
+                </button>
+                <button
+                  onClick={() => advanceDay?.()}
+                  className="px-5 py-2 rounded-xl text-sm bg-gray-800 hover:bg-gray-700 text-gray-500 border border-gray-700 transition-colors"
+                >
+                  Skip event
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => advanceDay?.()}
+                  className="px-5 py-2.5 rounded-xl text-base font-semibold bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 transition-colors"
+                >
+                  + 1 Day
+                </button>
+                {nextEvent && (
+                  <button
+                    onClick={() => advanceToNextEvent?.()}
+                    className="px-5 py-2 rounded-xl text-sm bg-gray-900 hover:bg-gray-800 text-gray-400 border border-gray-700 transition-colors text-center"
+                  >
+                    Skip → {nextEvent.circuit || nextEvent.label?.split('—')[1]?.trim() || nextEvent.label}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

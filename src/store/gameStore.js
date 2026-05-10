@@ -109,19 +109,24 @@ export const useGameStore = create(
 
       
       advanceDay: () => set(state => {
-        const current = new Date(state.currentDate)
-        current.setDate(current.getDate() + 1)
-        return { currentDate: current.toISOString() }
-      }),
+      const current = new Date(state.currentDate)
+      current.setDate(current.getDate() + 1)
+      return { currentDate: current.toISOString() }
+    }),
 
-      advanceToNextEvent: () => set(state => {
-        const current = new Date(state.currentDate)
-        const allEvents = [...schedule, ...(state.calendarEvents || [])]
-          .sort((a, b) => new Date(a.date) - new Date(b.date))
-        const next = allEvents.find(e => new Date(e.date + 'T12:00:00') > current)
-        if (!next) return state
-        return { currentDate: new Date(next.date + 'T12:00:00').toISOString() }
-      }),
+    advanceToNextEvent: () => set(state => {
+      const schedule = buildSchedule(state.season)
+      const allEvents = [...schedule, ...(state.calendarEvents || [])]
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+      const current = new Date(state.currentDate)
+      const next = allEvents.find(e => {
+        const eventDate = new Date(e.date + 'T00:00:00')
+        return eventDate > current
+      })
+      if (!next) return state
+      const nextDate = new Date(next.date + 'T10:00:00')
+      return { currentDate: nextDate.toISOString() }
+    }),
 
 setDayPhase: (phase) => set({ currentDayPhase: phase }),
       spendBudget: (amount) => set((state) => ({
@@ -168,29 +173,33 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
       })),
 
       addResult: (result, raceResults) => set((state) => {
-        const newPoints = state.championshipPoints + result.points
-        const newState = {
-          results: [...state.results, result],
-          round: state.round + 1,
-          budget: parseFloat((state.budget + result.points * 0.05).toFixed(1)),
-          championshipPoints: newPoints,
-          championshipPosition: newPoints > 150 ? 3 : newPoints > 100 ? 5 : 6,
-        }
+      const newPoints = state.championshipPoints + result.points
+      const current = new Date(state.currentDate)
+      current.setDate(current.getDate() + 1)
 
-        if (raceResults) {
-          const postRaceMsgs = generatePostRaceMessages(raceResults, state)
-          const formatted = postRaceMsgs.map(msg => ({
-            id: Math.floor(Date.now() + Math.random() * 1000),
-            read: false,
-            timestamp: new Date().toISOString(),
-            ...msg,
-          }))
-          newState.messages = [...formatted, ...state.messages]
-          newState.unreadCount = state.unreadCount + formatted.length
-        }
+      const newState = {
+        results: [...state.results, result],
+        round: state.round + 1,
+        budget: parseFloat((state.budget + result.points * 0.05).toFixed(1)),
+        championshipPoints: newPoints,
+        championshipPosition: newPoints > 150 ? 3 : newPoints > 100 ? 5 : 6,
+        currentDate: current.toISOString(),
+      }
 
-        return newState
-      }),
+      if (raceResults) {
+        const postRaceMsgs = generatePostRaceMessages(raceResults, state)
+        const formatted = postRaceMsgs.map(msg => ({
+          id: Math.floor(Date.now() + Math.random() * 1000),
+          read: false,
+          timestamp: new Date().toISOString(),
+          ...msg,
+        }))
+        newState.messages = [...formatted, ...state.messages]
+        newState.unreadCount = state.unreadCount + formatted.length
+      }
+
+      return newState
+    }),
 
       addMessage: (message) => set(state => ({
         messages: [{
@@ -460,6 +469,19 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
         const isCurrentRider = state.riders.find(r => r.id === riderId)
 
         if (isCurrentRider) {
+          const renewalMsg = {
+            id: Math.floor(Date.now() + Math.random() * 1000),
+            read: false,
+            timestamp: new Date().toISOString(),
+            from: isCurrentRider.name,
+            fromId: `rider_${riderId}`,
+            type: 'rider',
+            priority: 'normal',
+            subject: 'Contract renewed — thank you!',
+            preview: 'Really happy to be staying with the team.',
+            body: `Hi Manager,\n\nI just wanted to say thank you for renewing my contract. I'm really happy to be staying with ${state.team.name} for another ${terms.years} year${terms.years > 1 ? 's' : ''}.\n\nI'll give everything I have to make sure we achieve great results together.\n\n— ${isCurrentRider.name}`,
+            actions: [],
+          }
           return {
             riders: state.riders.map(r =>
               r.id === riderId
@@ -467,24 +489,65 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
                 : r
             ),
             budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
+            messages: [renewalMsg, ...state.messages],
+            unreadCount: state.unreadCount + 1,
           }
         }
 
         const newRider = state.riderDatabase.find(r => r.id === riderId)
         if (!newRider) return state
 
+        const signingMsg = {
+          id: Math.floor(Date.now() + Math.random() * 1000),
+          read: false,
+          timestamp: new Date().toISOString(),
+          from: newRider.name,
+          fromId: `rider_${riderId}`,
+          type: 'rider',
+          priority: 'normal',
+          subject: terms.timing === 'immediate'
+            ? 'Excited to join the team!'
+            : 'Looking forward to next season!',
+          preview: terms.timing === 'immediate'
+            ? "Can't wait to get started."
+            : "Really excited about joining the team next year.",
+          body: terms.timing === 'immediate'
+            ? `Hi Manager,\n\nI'm thrilled to be joining ${state.team.name} immediately. This is a great opportunity and I can't wait to get on the bike and start working with the team.\n\nLet's make the most of the rest of the season!\n\n— ${newRider.name}`
+            : `Hi Manager,\n\nThank you for the contract offer. I'm really excited to be joining ${state.team.name} for the ${state.season + 1} season.\n\nI've been following the team's progress and I'm confident we can achieve great things together. See you soon!\n\n— ${newRider.name}`,
+          actions: [],
+        }
+
+        const messages = [signingMsg]
+
+        if (terms.replaceRider && terms.timing === 'next_season') {
+          const replacedRider = state.riders.find(r => r.id === terms.replaceRider)
+          if (replacedRider && replacedRider.mentalState >= 14) {
+            const replacedMsg = {
+              id: Math.floor(Date.now() + Math.random() * 1001),
+              read: false,
+              timestamp: new Date().toISOString(),
+              from: replacedRider.name,
+              fromId: `rider_${replacedRider.id}`,
+              type: 'rider',
+              priority: 'high',
+              subject: 'I heard the news...',
+              preview: "I thought we had a future together.",
+              body: `Manager,\n\nI've just heard that I won't be part of the team next season. I won't pretend I'm not disappointed — I genuinely believed in this project and thought we were building something special together.\n\nI gave everything for this team and I'm proud of what we achieved. I hope the new rider serves you well.\n\nGood luck for the future.\n\n— ${replacedRider.name}`,
+              actions: [],
+            }
+            messages.push(replacedMsg)
+          }
+        }
+
         if (terms.timing === 'next_season') {
           return {
             pendingContracts: [
               ...(state.pendingContracts || []),
-              {
-                riderId,
-                terms,
-                replaceRiderId: terms.replaceRider,
-                joiningSeason: state.season + 1,
-              }
+              { riderId, terms, replaceRiderId: terms.replaceRider, joiningSeason: state.season + 1 }
             ],
             budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
+            messages: [...messages, ...state.messages],
+            unreadCount: state.unreadCount + messages.length,
           }
         }
 
@@ -504,6 +567,8 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
             r.id === riderId ? { ...r, teamId: 'player' } : r
           ),
           budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
+          messages: [...messages, ...state.messages],
+          unreadCount: state.unreadCount + messages.length,
         }
       }),
 
@@ -529,8 +594,8 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
       })),
 
       startScout: (riderId, level) => set(state => {
-      const costs = { basic: 0, detailed: 0.3, video: 0.8 }
-      const rounds = { basic: 1, detailed: 2, video: 3 }
+      const costs = { basic: 0, detailed: 0.5 }
+      const rounds = { basic: 1, detailed: 3 }
       const cost = costs[level] || 0
       if (state.budget < cost) return state
       return {
@@ -554,50 +619,39 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
       if (!rider) return state
 
       const analystSkill = state.staff?.dataAnalyst?.skill || 10
-      const accuracyBonus = (analystSkill / 20)
+      const baseAccuracy = scout.level === 'basic' ? 0.6 : 0.90
+      const accuracy = Math.min(0.98, baseAccuracy + (analystSkill / 20) * 0.15)
 
-      // Akurasi berdasarkan level scout + skill analis
-      const baseAccuracy = { basic: 0.5, detailed: 0.75, video: 0.95 }[scout.level] || 0.5
-      const accuracy = Math.min(0.99, baseAccuracy + accuracyBonus * 0.2)
-
-      // Generate report dengan noise berdasarkan akurasi
       function fuzz(val) {
         if (Math.random() < accuracy) return val
         return Math.max(1, Math.min(20, val + Math.round((Math.random() - 0.5) * 4)))
       }
 
+      const isDetailed = scout.level === 'detailed'
+
       const report = {
         level: scout.level,
         accuracy: Math.round(accuracy * 100),
         completedRound: state.round,
-        // Basic info selalu akurat
         name: rider.name,
         nationality: rider.nationality,
         flag: rider.flag,
-        tier: scout.level === 'basic' ? '?' : rider.tier,
-        salary: scout.level === 'basic'
-          ? `~€${(Math.round(rider.salary * 2) / 2).toFixed(1)}M`
-          : `€${rider.salary}M`,
-        // Stats dengan noise
+        tier: rider.tier,
+        salary: isDetailed ? `€${rider.salary}M` : `~€${(Math.round(rider.salary * 2) / 2).toFixed(1)}M`,
         qualiPace: fuzz(rider.qualiPace),
         racePace: fuzz(rider.racePace),
-        tyreManagement: scout.level === 'basic' ? null : fuzz(rider.tyreManagement),
-        overtaking: scout.level === 'basic' ? null : fuzz(rider.overtaking),
-        defending: scout.level === 'basic' ? null : fuzz(rider.defending),
         wetPerformance: fuzz(rider.wetPerformance),
-        consistency: scout.level === 'basic' ? null : fuzz(rider.consistency),
-        physicalStamina: scout.level !== 'video' ? null : fuzz(rider.physicalStamina),
-        cornerSpeed: scout.level !== 'video' ? null : fuzz(rider.cornerSpeed),
-        brakingAbility: scout.level !== 'video' ? null : fuzz(rider.brakingAbility),
-        setupFeedback: scout.level !== 'video' ? null : fuzz(rider.setupFeedback),
-        mentalResilience: scout.level !== 'video' ? null : fuzz(rider.mentalResilience),
-        riskTaking: scout.level !== 'video' ? null : fuzz(rider.riskTaking),
-        // Proyeksi hanya di video
-        projection: scout.level === 'video' ? {
-          peakOverall: Math.min(20, rider.overall + Math.round(Math.random() * 2)),
-          bestCircuitType: ['street', 'technical', 'high-speed', 'mixed'][Math.floor(Math.random() * 4)],
-          notes: generateScoutNotes(rider, accuracy),
-        } : null,
+        tyreManagement: isDetailed ? fuzz(rider.tyreManagement) : null,
+        overtaking: isDetailed ? fuzz(rider.overtaking) : null,
+        defending: isDetailed ? fuzz(rider.defending) : null,
+        consistency: isDetailed ? fuzz(rider.consistency) : null,
+        cornerSpeed: isDetailed ? fuzz(rider.cornerSpeed) : null,
+        brakingAbility: isDetailed ? fuzz(rider.brakingAbility) : null,
+        mentalResilience: isDetailed ? fuzz(rider.mentalResilience) : null,
+        riskTaking: isDetailed ? fuzz(rider.riskTaking) : null,
+        setupFeedback: isDetailed ? fuzz(rider.setupFeedback) : null,
+        physicalStamina: isDetailed ? fuzz(rider.physicalStamina) : null,
+        notes: isDetailed ? generateScoutNotes(rider, accuracy) : null,
       }
 
       const { [riderId]: _, ...remainingScouts } = state.activeScouts
@@ -619,7 +673,6 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
       const teamTierMap = { factory: 4, independent: 2 }
       const teamTier = teamTierMap[state.team.type] || 2
 
-      // Interest berdasarkan reputasi tim vs tier rider
       let baseInterest = 50
       if (teamTier >= riderTier) baseInterest = 70
       if (teamTier > riderTier) baseInterest = 85

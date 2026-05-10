@@ -2,8 +2,6 @@ import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 import StarRating from '../components/StarRating'
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
-
 const STAFF_ROLES = [
   { key: 'chiefEngineer', label: 'Chief Engineer' },
   { key: 'dataAnalyst', label: 'Data Analyst' },
@@ -20,8 +18,6 @@ const TIER_COLOR = {
   midfield: 'bg-gray-800 text-gray-300 border-gray-600',
   backmarker: 'bg-red-950 text-red-400 border-red-800',
 }
-
-// Klausul kontrak
 const CONTRACT_CLAUSES = [
   {
     id: 'factory_full',
@@ -558,7 +554,6 @@ export default function Contracts() {
     setConfirmRelease(null)
   }
 
-  // Elite riders auto-scouted
   const autoScouted = riderDatabase.filter(r => r.tier === 'elite').map(r => r.id)
   const isVisible = (rider) =>
     rider.tier === 'elite' ||
@@ -751,17 +746,28 @@ export default function Contracts() {
 
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Scout Levels</div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {[
-                { level: 'basic', label: 'Basic Scout', cost: 'Free', time: '1 round', reveals: 'Name, nationality, quali & race pace, salary range' },
-                { level: 'detailed', label: 'Detailed Report', cost: '€0.3M', time: '2 rounds', reveals: '+ Tyre mgmt, overtaking, defending, wet performance, consistency' },
-                { level: 'video', label: 'Video Analysis', cost: '€0.8M', time: '3 rounds', reveals: '+ All stats, risk-taking, mental resilience, setup feedback, projection' },
+                {
+                  level: 'basic',
+                  label: 'Basic Scout',
+                  cost: 'Free',
+                  time: '1 round',
+                  reveals: 'Quali pace, race pace, wet performance, salary estimate'
+                },
+                {
+                  level: 'detailed',
+                  label: 'Detailed Report',
+                  cost: '€0.5M',
+                  time: '3 rounds',
+                  reveals: 'All stats — tyre management, overtaking, defending, mental, braking, corner speed, risk style, analyst notes'
+                },
               ].map(s => (
-                <div key={s.level} className="bg-gray-800 rounded-xl p-3">
+                <div key={s.level} className="bg-gray-800 rounded-xl p-4">
                   <div className="text-base font-semibold text-white mb-1">{s.label}</div>
-                  <div className="text-sm text-green-400 font-medium">{s.cost}</div>
+                  <div className="text-base text-green-400 font-medium">{s.cost}</div>
                   <div className="text-sm text-gray-500">{s.time}</div>
-                  <div className="text-xs text-gray-600 mt-2 leading-relaxed">{s.reveals}</div>
+                  <div className="text-sm text-gray-600 mt-2 leading-relaxed">{s.reveals}</div>
                 </div>
               ))}
             </div>
@@ -842,22 +848,19 @@ export default function Contracts() {
                     {/* Action buttons inline */}
                     <div className="flex flex-col gap-2 flex-shrink-0">
                       {!activeScout && !hasReport && !isElite && (
-                        <div className="flex gap-1">
-                          {['basic', 'detailed', 'video'].map(level => {
-                            const costs = { basic: 0, detailed: 0.3, video: 0.8 }
-                            return (
-                              <button
-                                key={level}
-                                onClick={() => {
-                                  startScout(rider.id, level)
-                                  showNotif(`${level} scout started for ${rider.name}`)
-                                }}
-                                className="px-2 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors capitalize"
-                              >
-                                {level}
-                              </button>
-                            )
-                          })}
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { startScout(rider.id, 'basic'); showNotif(`Basic scout started — ${rider.name}`) }}
+                            className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors"
+                          >
+                            Basic
+                          </button>
+                          <button
+                            onClick={() => { startScout(rider.id, 'detailed'); showNotif(`Detailed report commissioned — ${rider.name}`) }}
+                            className="px-3 py-1.5 rounded-xl text-sm font-semibold bg-blue-900 hover:bg-blue-800 text-blue-300 border border-blue-700 transition-colors"
+                          >
+                            Detailed
+                          </button>
                         </div>
                       )}
 
@@ -890,7 +893,6 @@ export default function Contracts() {
                     </div>
                   </div>
 
-                  {/* Scout report detail */}
                   {hasReport && (
                     <div className="mt-3 pt-3 border-t border-gray-800">
                       <div className="flex items-center justify-between mb-2">
@@ -933,14 +935,42 @@ export default function Contracts() {
                   )}
 
                   {/* Agent contact response */}
-                  {contact && (
-                    <div className={`mt-3 pt-3 border-t border-gray-800 text-sm leading-relaxed ${
-                      contact.status === 'keen' ? 'text-green-400' :
-                      contact.status === 'open' ? 'text-yellow-400' : 'text-red-400'
-                    }`}>
-                      {contact.message}
+                  {(() => {
+                  const pendingContracts = useGameStore.getState().pendingContracts || []
+                  const pending = pendingContracts.find(p => p.riderId === rider.id)
+                  if (pending) {
+                    return (
+                      <div className="mt-3 pt-3 border-t border-gray-800">
+                        <div className="bg-green-950 border border-green-700 rounded-xl px-4 py-3">
+                          <div className="text-base font-semibold text-green-300 mb-0.5">
+                            ✓ {rider.name} will join your team next season
+                          </div>
+                          <div className="text-sm text-green-500">
+                            Contract signed · Joining Season {useGameStore.getState().season + 1}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+
+                {/* Agent contact response — hanya tampil jika belum deal */}
+                {contact && !negotiations[rider.id] && (() => {
+                  const pendingContracts = useGameStore.getState().pendingContracts || []
+                  const pending = pendingContracts.find(p => p.riderId === rider.id)
+                  if (pending) return null
+                  return (
+                    <div className="mt-3 pt-3 border-t border-gray-800">
+                      <div className={`text-sm leading-relaxed ${
+                        contact.status === 'keen' ? 'text-green-400' :
+                        contact.status === 'open' ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {contact.message}
+                      </div>
                     </div>
-                  )}
+                  )
+                })()}
                 </div>
               )
             })}
