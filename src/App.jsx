@@ -6,21 +6,21 @@ import TeamSelection from './screens/TeamSelection'
 import Layout from './components/Layout'
 import Dashboard from './screens/Dashboard'
 import BikeUpgrade from './screens/BikeUpgrade'
-import RaceScreen from './screens/RaceScreen'
 import Contracts from './screens/Contracts'
+import Calendar from './screens/Calendar'
 import Messages from './screens/Messages'
 import RnD from './screens/RnD'
-import Calendar from './screens/Calendar'
+import RaceScreen from './screens/RaceScreen'
 
 export default function App() {
-  const {manager, initNewGame, resetGame } = useGameStore()
+  const { manager, initNewGame, resetGame, grid, initGrid } = useGameStore()
   const [appState, setAppState] = useState(manager ? 'game' : 'menu')
   const [screen, setScreen] = useState('dashboard')
   const [pendingManager, setPendingManager] = useState(null)
+  const [showRace, setShowRace] = useState(false)
+  const [racePhase, setRacePhase] = useState('race') // 'practice' | 'qualifying' | 'race'
 
-  function handleNewGame() {
-    setAppState('create-manager')
-  }
+  function handleNewGame() { setAppState('create-manager') }
 
   function handleManagerCreated(managerData) {
     setPendingManager(managerData)
@@ -33,49 +33,46 @@ export default function App() {
     setAppState('game')
   }
 
-  function handleResume() {
-    setAppState('game')
+  function handleResume() { setAppState('game') }
+
+  function handleStartRaceWeekend(phase = 'race') {
+    setRacePhase(phase)
+    setShowRace(true)
+  }
+
+  function handleRaceFinished() {
+    setShowRace(false)
+    setScreen('dashboard')
   }
 
   if (appState === 'menu') {
-    return <MainMenu onNewGame={handleNewGame} onResume={handleResume} />
+    return <MainMenu onNewGame={handleNewGame} onResume={handleResume}
+      onEditor={() => { if (grid.length === 0) initGrid(); setAppState('editor') }} />
   }
-
   if (appState === 'create-manager') {
-    return (
-      <CreateManager
-        onConfirm={handleManagerCreated}
-        onBack={() => setAppState('menu')}
-      />
-    )
+    return <CreateManager onConfirm={handleManagerCreated} onBack={() => setAppState('menu')} />
+  }
+  if (appState === 'team-selection') {
+    return <TeamSelection onConfirm={handleTeamSelected} onBack={() => setAppState('create-manager')} />
   }
 
-  if (appState === 'team-selection') {
-    return (
-      <TeamSelection
-        onConfirm={handleTeamSelected}
-        onBack={() => setAppState('create-manager')}
-      />
-    )
+  if (showRace) {
+    return <RaceScreen phase={racePhase} onFinished={handleRaceFinished} />
   }
 
   return (
-  <Layout
-    currentScreen={screen}
-    setScreen={setScreen}
-    onMainMenu={() => setAppState('menu')}
-    onNewGame={() => {
-      resetGame()
-      setAppState('create-manager')
-    }}
-  >
-    {screen === 'dashboard' && <Dashboard />}
-    {screen === 'bike' && <BikeUpgrade />}
-    {screen === 'race' && <RaceScreen />}
-    {screen === 'contracts' && <Contracts />}
-    {screen === 'calendar' && <Calendar />}
-    {screen === 'messages' && <Messages />}
-    {screen === 'rnd' && <RnD />}
-  </Layout>
-)
+    <Layout
+      currentScreen={screen}
+      setScreen={setScreen}
+      onMainMenu={() => setAppState('menu')}
+      onNewGame={() => { resetGame(); setAppState('create-manager') }}
+    >
+      {screen === 'dashboard' && <Dashboard onStartRace={handleStartRaceWeekend} />}
+      {screen === 'bike' && <BikeUpgrade />}
+      {screen === 'contracts' && <Contracts />}
+      {screen === 'calendar' && <Calendar onStartRace={handleStartRaceWeekend} />}
+      {screen === 'messages' && <Messages />}
+      {screen === 'rnd' && <RnD />}
+    </Layout>
+  )
 }

@@ -1,6 +1,6 @@
 import { useGameStore } from '../store/gameStore'
 import StarRating from '../components/StarRating'
-import { buildSchedule } from '../store/gameStore'
+import { buildSchedule } from '../data/schedule'
 
 function RiderCard({ rider }) {
   const AVATAR_COLORS = [
@@ -67,7 +67,7 @@ function RiderCard({ rider }) {
   )
 }
 
-export default function Dashboard() {
+export default function Dashboard({ onStartRace }) {
   const {
     team, budget, riders, bike, staff, round, season,
     manager, championshipPoints, championshipPosition,
@@ -79,15 +79,33 @@ export default function Dashboard() {
     (bike.topSpeed + bike.aero + bike.chassis + bike.braking + bike.electronics) / 5
   )
   const todayStr = currentDate ? currentDate.split('T')[0] : ''
-  const schedule = buildSchedule ? buildSchedule(season) : []
-  const allEvents = [...(schedule || []), ...(calendarEvents || [])]
-  const hasImportantToday = allEvents.some(e =>
-    e.date === todayStr && ['practice', 'qualifying', 'race', 'deadline'].includes(e.type)
+  const schedule = buildSchedule(season)
+
+  const allEvents = [...schedule, ...(calendarEvents || [])]
+
+  const todayEvents = allEvents.filter(
+    e => e.date === todayStr
+  )
+
+  const todayRaceEvent = todayEvents.find(
+    e => ['practice', 'qualifying', 'race'].includes(e.type)
   )
 
   const nextEvent = allEvents
-    .filter(e => new Date(e.date) > new Date(currentDate))
+    .filter(e => new Date(e.date + 'T12:00:00') > new Date(currentDate))
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0]
+
+  function handleAdvance() {
+    if (todayRaceEvent) {
+      onStartRace?.(todayRaceEvent.type)
+    } else {
+      advanceDay()
+    }
+  }
+
+  function handleSkip() {
+    advanceToNextEvent()
+  }
 
   function formatDate(iso) {
     if (!iso) return ''
@@ -126,27 +144,40 @@ export default function Dashboard() {
 
           <div className="flex flex-col gap-2">
             <button
-              onClick={() => advanceDay?.()}
-              disabled={hasImportantToday}
+              onClick={handleAdvance}
               className={`px-5 py-2.5 rounded-xl text-base font-semibold transition-colors ${
-                hasImportantToday
-                  ? 'bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700'
+                todayRaceEvent
+                  ? 'bg-red-600 hover:bg-red-500 text-white'
                   : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
               }`}
             >
-              + 1 Day
+              {todayRaceEvent
+                ? `${todayRaceEvent.icon || '🏁'} ${
+                    todayRaceEvent.type.charAt(0).toUpperCase() +
+                    todayRaceEvent.type.slice(1)
+                  }`
+                : '+ 1 Day →'}
             </button>
-            {nextEvent && (
+
+            {nextEvent && !todayRaceEvent && (
               <button
-                onClick={() => advanceToNextEvent?.()}
-                disabled={hasImportantToday}
-                className={`px-5 py-2.5 rounded-xl text-base font-semibold transition-colors text-center ${
-                  hasImportantToday
-                    ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-500 text-white'
-                }`}
+                onClick={handleSkip}
+                className="px-5 py-2.5 rounded-xl text-base font-semibold bg-gray-900 hover:bg-gray-800 text-gray-300 border border-gray-700 transition-colors text-center"
               >
-                Skip → {nextEvent.circuit || nextEvent.label?.split(' ')[0]}
+                Skip → {
+                  nextEvent.circuit ||
+                  nextEvent.label?.split('—')[1]?.trim() ||
+                  nextEvent.label
+                }
+              </button>
+            )}
+
+            {todayRaceEvent && (
+              <button
+                onClick={() => advanceDay()}
+                className="px-5 py-2.5 rounded-xl text-sm bg-gray-800 hover:bg-gray-700 text-gray-500 border border-gray-700 transition-colors"
+              >
+                Skip this event
               </button>
             )}
           </div>

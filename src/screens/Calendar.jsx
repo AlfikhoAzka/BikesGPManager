@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { useGameStore, buildSchedule } from '../store/gameStore'
+import { useGameStore } from '../store/gameStore'
+import { buildSchedule } from '../data/schedule'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

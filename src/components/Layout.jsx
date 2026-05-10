@@ -4,7 +4,6 @@ import { useGameStore } from '../store/gameStore'
 const navItems = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'bike', label: 'Bike & Upgrades' },
-  { id: 'race', label: 'Race' },
   { id: 'contracts', label: 'Contracts' },
   { id: 'calendar', label: 'Calendar' },
   { id: 'messages', label: 'Messages' },
