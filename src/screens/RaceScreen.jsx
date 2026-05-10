@@ -48,14 +48,12 @@ const PHASE_INFO = {
   },
 }
 
-// Format lap time properly: e.g. 1:38.471
 function formatLapTime(seconds) {
   const mins = Math.floor(seconds / 60)
   const secs = (seconds % 60).toFixed(3).padStart(6, '0')
   return `${mins}:${secs}`
 }
 
-// Generate realistic lap time based on circuit baseTime + pace
 function genLapTime(baseTime, pace, variance = 0.05) {
   const paceBonus = (1 - pace / 20) * 0.15
   const rand = (Math.random() - 0.5) * variance
@@ -90,7 +88,6 @@ function buildConstructorStandings(raceResults, existingResults) {
     .slice(0, 10)
 }
 
-// AI riders for non-race sessions
 const AI_NAMES = [
   { name: 'M. Marquez', pace: 20 }, { name: 'F. Bagnaia', pace: 19 },
   { name: 'J. Martin', pace: 18 }, { name: 'M. Bezzecchi', pace: 18 },
@@ -128,7 +125,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
 
   useEffect(() => () => clearInterval(intervalRef.current), [])
 
-  // Generate FP/Quali/Sprint results
   function generateSessionResult(sessionType) {
     const baseTime = circuit.baseTime
 
@@ -285,7 +281,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
           </div>
 
           {!prevResult ? (
-            // Pre-session view
             <div className="space-y-5">
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center">
                 <div className={`text-4xl mb-3`}>{phaseInfo.icon}</div>
@@ -330,7 +325,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
               </button>
             </div>
           ) : (
-            // Post-session results
             <div className="space-y-5">
               <div className="text-center">
                 <div className={`text-2xl font-bold mb-1 ${phaseInfo.color}`}>
@@ -343,7 +337,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
                 </div>
               </div>
 
-              {/* Your riders result highlight */}
               <div className="grid grid-cols-2 gap-3">
                 {riders.map(rider => {
                   const result = prevResult.find(r => r.name === rider.name)
@@ -367,7 +360,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
                 })}
               </div>
 
-              {/* Full session results table */}
               <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
                 <div className="px-4 py-2 border-b border-gray-800 text-sm font-semibold text-gray-400 uppercase tracking-wider">
                   Full {currentPhase.toUpperCase()} Classification
@@ -395,7 +387,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
                 </div>
               </div>
 
-              {/* Next session or race */}
               {currentPhase !== 'sprint' ? (
                 <button
                   onClick={() => {
@@ -423,7 +414,6 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
     )
   }
 
-  // ── RACE DAY ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       <header className="border-b border-gray-800 px-6 py-4 flex items-center gap-4">

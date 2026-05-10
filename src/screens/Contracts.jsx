@@ -703,7 +703,6 @@ export default function Contracts() {
                   </div>
                 </div>
 
-                {/* Attributes grid */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {attrs.map(attr => (
                     <div key={attr.label} className="bg-gray-800 rounded-lg px-3 py-2 flex items-center justify-between">
