@@ -105,7 +105,9 @@ const AI_NAMES = [
 export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) {
   const {
     riders, bike, staff, team, round,
-    results: existingResults, addResult, advanceDay,
+    results: existingResults,
+    allRaceResults,
+    addResult, advanceDay,
   } = useGameStore()
 
   const circuit = getCircuit(round)
@@ -149,8 +151,8 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
   }
 
   function completeNonRacePhase() {
-    const result = generateSessionResult(currentPhase)
     const thisPhase = currentPhase
+    const result = generateSessionResult(thisPhase)
     setPhaseResults(prev => ({ ...prev, [thisPhase]: result }))
     advanceDay()
 
@@ -595,7 +597,7 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
                   <span className="col-span-9">Rider</span>
                   <span className="col-span-2">Pts</span>
                 </div>
-                {buildStandings(raceResults, existingResults, team.name).map((r, i) => (
+                {buildStandings(raceResults, existingResults, team.name || []).map((r, i) => (
                   <div key={r.name} className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-gray-800 last:border-0 text-sm ${
                     riders.find(pr => pr.name === r.name) ? 'bg-red-950 bg-opacity-30' : ''
                   }`}>

@@ -173,33 +173,44 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
       })),
 
       addResult: (result, raceResults) => set((state) => {
-      const newPoints = state.championshipPoints + result.points
-      const current = new Date(state.currentDate)
-      current.setDate(current.getDate() + 1)
+        const newPoints = state.championshipPoints + result.points
+        const current = new Date(state.currentDate)
+        current.setDate(current.getDate() + 1)
 
-      const newState = {
-        results: [...state.results, result],
-        round: state.round + 1,
-        budget: parseFloat((state.budget + result.points * 0.05).toFixed(1)),
-        championshipPoints: newPoints,
-        championshipPosition: newPoints > 150 ? 3 : newPoints > 100 ? 5 : 6,
-        currentDate: current.toISOString(),
-      }
+        const allRaceResults = raceResults ? raceResults.map(r => ({
+          round: result.round,
+          name: r.name,
+          rider: r.name,
+          team: r.team,
+          position: r.position,
+          points: r.points || 0,
+          isPlayer: r.isPlayer || false,
+        })) : []
 
-      if (raceResults) {
-        const postRaceMsgs = generatePostRaceMessages(raceResults, state)
-        const formatted = postRaceMsgs.map(msg => ({
-          id: Math.floor(Date.now() + Math.random() * 1000),
-          read: false,
-          timestamp: new Date().toISOString(),
-          ...msg,
-        }))
-        newState.messages = [...formatted, ...state.messages]
-        newState.unreadCount = state.unreadCount + formatted.length
-      }
+        const newState = {
+          results: [...state.results, result],
+          allRaceResults: [...(state.allRaceResults || []), ...allRaceResults],
+          round: state.round + 1,
+          budget: parseFloat((state.budget + result.points * 0.05).toFixed(1)),
+          championshipPoints: newPoints,
+          championshipPosition: newPoints > 150 ? 3 : newPoints > 100 ? 5 : 6,
+          currentDate: current.toISOString(),
+        }
 
-      return newState
-    }),
+        if (raceResults) {
+          const postRaceMsgs = generatePostRaceMessages(raceResults, state)
+          const formatted = postRaceMsgs.map(msg => ({
+            id: Math.floor(Date.now() + Math.random() * 1000),
+            read: false,
+            timestamp: new Date().toISOString(),
+            ...msg,
+          }))
+          newState.messages = [...formatted, ...state.messages]
+          newState.unreadCount = state.unreadCount + formatted.length
+        }
+
+        return newState
+      }),
 
       addMessage: (message) => set(state => ({
         messages: [{
@@ -467,31 +478,39 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
       }),
 
       signContract: (riderId, terms) => set(state => {
-        const isCurrentRider = state.riders.find(r => r.id === riderId)
+        const existingRider = state.riders.find(r => r.id === riderId)
 
-        if (isCurrentRider && terms.type === 'renewal') {
+        if (existingRider && (terms.type === 'renewal' || terms.type === 'staff')) {
           const renewalMsg = {
             id: Math.floor(Date.now() + Math.random() * 1000),
             read: false,
             timestamp: new Date().toISOString(),
-            from: isCurrentRider.name,
+            from: existingRider.name,
             fromId: `rider_${riderId}`,
             type: 'rider',
             priority: 'normal',
             subject: 'Contract renewed — thank you!',
             preview: 'Really happy to be staying with the team.',
-            body: `Hi Manager,\n\nThank you for renewing my contract. I'm delighted to be staying with ${state.team.name} for another ${terms.years} year${terms.years > 1 ? 's' : ''}.\n\nI'll give everything I have!\n\n— ${isCurrentRider.name}`,
+            body: `Hi Manager,\n\nThank you for renewing my contract. I'm delighted to be staying with ${state.team.name} for another ${terms.years} year${terms.years > 1 ? 's' : ''}.\n\nI'll give everything!\n\n— ${existingRider.name}`,
             actions: [],
           }
           return {
             riders: state.riders.map(r =>
               r.id === riderId
-                ? { ...r, contractYears: terms.years, salary: terms.salary, role: terms.role }
+                ? {
+                    ...r,
+                    contractYears: parseInt(terms.years),
+                    salary: parseFloat(terms.salary),
+                    role: terms.role || r.role,
+                  }
                 : r
             ),
             budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
             messages: [renewalMsg, ...state.messages],
             unreadCount: state.unreadCount + 1,
+            negotiations: Object.fromEntries(
+              Object.entries(state.negotiations).filter(([k]) => k !== String(riderId))
+            ),
           }
         }
 
@@ -529,7 +548,7 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
               priority: 'high',
               subject: 'I heard the news...',
               preview: "I thought we had a future together.",
-              body: `Manager,\n\nI've just heard I won't be part of the team next season. I'm disappointed — I believed in this project.\n\nI gave everything for this team. I wish you well.\n\n— ${replacedRider.name}`,
+              body: `Manager,\n\nI've just heard I won't be part of the team next season. I'm disappointed.\n\nI gave everything for this team. I wish you well.\n\n— ${replacedRider.name}`,
               actions: [],
             })
           }
@@ -554,8 +573,8 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
         return {
           riders: [...updatedRiders, {
             ...newRider,
-            contractYears: terms.years,
-            salary: terms.salary,
+            contractYears: parseInt(terms.years),
+            salary: parseFloat(terms.salary),
             role: terms.role || 'equal',
             teamId: 'player',
           }],
@@ -565,6 +584,9 @@ setDayPhase: (phase) => set({ currentDayPhase: phase }),
           budget: parseFloat((state.budget - (terms.signingBonus || 0)).toFixed(1)),
           messages: [...messages, ...state.messages],
           unreadCount: state.unreadCount + messages.length,
+          negotiations: Object.fromEntries(
+            Object.entries(state.negotiations).filter(([k]) => k !== String(riderId))
+          ),
         }
       }),
 

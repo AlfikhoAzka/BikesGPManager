@@ -125,7 +125,7 @@ function NegotiationModal({ target, type, onClose, onSign }) {
   const { budget, team, riders, negotiations, startNegotiation, closeNegotiation, pendingContracts } = useGameStore()
 
   const availableClauses = CONTRACT_CLAUSES.filter(c =>
-    c.availableFor.includes(team.type) || c.availableFor.includes('independent')
+    c.availableFor.includes(team.type)
   ).filter(c => c.id !== 'loan_factory' || team.type === 'factory')
 
   const [salary, setSalary] = useState(target.salary || 1.0)
@@ -141,7 +141,7 @@ function NegotiationModal({ target, type, onClose, onSign }) {
   const [showReplaceWarning, setShowReplaceWarning] = useState(false)
 
   const clauseObj = availableClauses.find(c => c.id === selectedClause)
-  const isFreeAgent = !target.teamId || target.teamId === null
+  const isFreeAgent = !target.teamId
 
   const clauseModifier = {
     factory_full: 1.20, factory_development: 0.85,
@@ -184,18 +184,7 @@ function NegotiationModal({ target, type, onClose, onSign }) {
     else if (reaction.type === 'reject') setResult('rejected')
   }
 
-  function acceptCounter() {
-    const terms = { ...agentResponse.counter, signingBonus, clause: selectedClause, role: riderRole, timing: signTiming, replaceRider }
-    onSign(target.id, terms)
-    closeNegotiation(target.id)
-    onClose()
-  }
-
   function finalizeAccept() {
-  if (signTiming === 'immediate' && !isFreeAgent) {
-    setShowReplaceWarning(true)
-    return
-  }
   onSign(target.id, {
     salary: effectiveSalary,
     years,
@@ -203,8 +192,8 @@ function NegotiationModal({ target, type, onClose, onSign }) {
     clause: selectedClause,
     role: riderRole,
     timing: type === 'renewal' ? 'immediate' : signTiming,
-    replaceRider,
-    type,
+    replaceRider: type === 'renewal' ? null : replaceRider,
+    type: type,
   })
   closeNegotiation(target.id)
   onClose()
@@ -212,13 +201,14 @@ function NegotiationModal({ target, type, onClose, onSign }) {
 
 function acceptCounter() {
   const terms = {
-    ...agentResponse.counter,
+    salary: agentResponse.counter.salary,
+    years: agentResponse.counter.years,
     signingBonus,
     clause: selectedClause,
     role: riderRole,
     timing: type === 'renewal' ? 'immediate' : signTiming,
-    replaceRider,
-    type,
+    replaceRider: type === 'renewal' ? null : replaceRider,
+    type: type,
   }
   onSign(target.id, terms)
   closeNegotiation(target.id)
@@ -262,7 +252,7 @@ function acceptCounter() {
             </div>
             <div className="text-right">
               <div className="text-sm text-gray-500">Asking</div>
-              <div className="text-base font-semibold text-yellow-400">€{target.salary}M/yr</div>
+              <div className="text-base font-semibold text-yellow-400">€{target.salary ?? 0}M/yr</div>
             </div>
           </div>
 
@@ -520,7 +510,7 @@ function acceptCounter() {
       </div>
 
       {showReplaceWarning && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-60 p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-6">
           <div className="bg-gray-900 border border-red-700 rounded-2xl w-full max-w-sm p-6">
             <div className="text-lg font-semibold text-white mb-2">⚠ Early Termination</div>
             <div className="text-base text-gray-400 mb-2">
@@ -1004,7 +994,6 @@ export default function Contracts() {
                   )}
 
                   {(() => {
-                  const pendingContracts = useGameStore.getState().pendingContracts || []
                   const pending = pendingContracts.find(p => p.riderId === rider.id)
                   if (pending) {
                     return (
@@ -1024,7 +1013,6 @@ export default function Contracts() {
                 })()}
 
                 {contact && !negotiations[rider.id] && (() => {
-                  const pendingContracts = useGameStore.getState().pendingContracts || []
                   const pending = pendingContracts.find(p => p.riderId === rider.id)
                   if (pending) return null
                   return (

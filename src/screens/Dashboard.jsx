@@ -85,6 +85,28 @@ export default function Dashboard({ onStartRace }) {
   const todayRaceEvent = todayEvents.find(e =>
     ['practice', 'qualifying', 'race'].includes(e.type)
   )
+
+  const eventToPhase = {
+    'practice': 'fp1',
+    'qualifying': 'qualifying',
+    'race': 'race',
+  }
+
+  const todayHasRaceWeekend = todayEvents.some(e =>
+    ['practice', 'qualifying', 'race'].includes(e.type)
+  )
+
+  const currentRaceRound = allEvents.find(e =>
+    e.type === 'race' && Math.abs(new Date(e.date) - new Date(todayStr)) <= 3 * 86400000
+  )
+
+  function handleAdvance() {
+    if (todayHasRaceWeekend) {
+      onStartRace?.('fp1')
+    } else {
+      advanceDay()
+    }
+  }
   const nextEvent = allEvents
     .filter(e => new Date(e.date + 'T00:00:00') > new Date(currentDate || '2026-01-01'))
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0]
@@ -97,11 +119,12 @@ export default function Dashboard({ onStartRace }) {
 
     function handleAdvance() {
       if (todayRaceEvent) {
-        onStartRace?.(todayRaceEvent.type)
+        const phaseToStart = todayRaceEvent.type === 'race' ? 'fp1' : todayRaceEvent.type
+        onStartRace?.(phaseToStart)
       } else {
         advanceDay()
       }
-  }
+    }
 
   function handleSkip() {
     advanceToNextEvent()
