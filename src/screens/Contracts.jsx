@@ -121,6 +121,24 @@ const CONTRACT_CLAUSES = [
   },
 ]
 
+function Tooltip({ text, children }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative inline-block"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm text-gray-300 leading-relaxed shadow-xl pointer-events-none">
+          {text}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-600" />
+        </div>
+      )}
+    </div>
+  )
+}
+
 function NegotiationModal({ target, type, onClose, onSign }) {
   const { budget, team, riders, negotiations, startNegotiation, closeNegotiation, pendingContracts } = useGameStore()
 
@@ -128,10 +146,12 @@ function NegotiationModal({ target, type, onClose, onSign }) {
     c.availableFor.includes(team.type)
   ).filter(c => c.id !== 'loan_factory' || team.type === 'factory')
 
-  const [salary, setSalary] = useState(target.salary || 1.0)
+  const [salary, setSalary] = useState(
+    typeof target.salary === 'number' ? target.salary : parseFloat(target.salary) || 1.0
+  )
   const [years, setYears] = useState(1)
   const [signingBonus, setSigningBonus] = useState(0)
-  const [selectedClause, setSelectedClause] = useState(availableClauses[0]?.id || '')
+  const [selectedClauses, setSelectedClauses] = useState([availableClauses[0]?.id || ''])
   const [riderRole, setRiderRole] = useState('equal')
   const [signTiming, setSignTiming] = useState('next_season')
   const [replaceRider, setReplaceRider] = useState(riders[0]?.id || null)
@@ -139,91 +159,136 @@ function NegotiationModal({ target, type, onClose, onSign }) {
   const [agentResponse, setAgentResponse] = useState(null)
   const [result, setResult] = useState(null)
   const [showReplaceWarning, setShowReplaceWarning] = useState(false)
+  const [attemptsLeft, setAttemptsLeft] = useState(3)
+  const [salaryInput, setSalaryInput] = useState(String(
+    typeof target.salary === 'number' ? target.salary : parseFloat(target.salary) || 1.0
+  ))
 
-  const clauseObj = availableClauses.find(c => c.id === selectedClause)
   const isFreeAgent = !target.teamId
 
-  const clauseModifier = {
+  // Hitung combined clause modifier (average jika multiple)
+  const clauseModifiers = {
     factory_full: 1.20, factory_development: 0.85,
     independent_works: 1.05, independent_standard: 1.0,
     loan_factory: 0.7, buyout_clause: 1.0,
     performance_bonus: 0.80, option_year: 1.05,
     no_compete: 1.10, mentorship: 0.90,
-  }[selectedClause] || 1.0
+  }
+  const clauseModifier = selectedClauses.length > 0
+    ? selectedClauses.reduce((acc, id) => acc + (clauseModifiers[id] || 1.0), 0) / selectedClauses.length
+    : 1.0
 
   const roleModifier = { first: 1.15, equal: 1.0, second: 0.85 }[riderRole] || 1.0
-  const effectiveSalary = parseFloat((salary * clauseModifier * roleModifier).toFixed(1))
+  const effectiveSalary = parseFloat((salary * clauseModifier * roleModifier).toFixed(2))
   const totalCost = effectiveSalary * years + signingBonus
   const canAfford = budget >= totalCost
+
+  function toggleClause(id) {
+    setSelectedClauses(prev =>
+      prev.includes(id)
+        ? prev.length > 1 ? prev.filter(c => c !== id) : prev
+        : [...prev, id]
+    )
+  }
+
+  function handleSalaryInput(val) {
+    setSalaryInput(val)
+    const parsed = parseFloat(val)
+    if (!isNaN(parsed) && parsed > 0) setSalary(parsed)
+  }
 
   function getAgentReaction(offer) {
     const expected = (target.salary || 1.0) * clauseModifier * roleModifier
     const ratio = offer.salary / expected
-    if (ratio >= 1.15) return { type: 'accept', msg: `${target.name}'s agent accepts the terms.` }
-    if (ratio >= 0.95) return {
+    if (ratio >= 1.1) return { type: 'accept', msg: `${target.name}'s agent accepts the terms.` }
+    if (ratio >= 0.9) return {
       type: 'counter',
-      counter: { salary: parseFloat((expected * 1.05).toFixed(1)), years: Math.max(offer.years, 1) },
-      msg: `Close — agent wants €${(expected * 1.05).toFixed(1)}M/yr.`,
+      counter: { salary: parseFloat((expected * 1.05).toFixed(2)), years: Math.max(offer.years, 1) },
+      msg: `Close — agent wants €${(expected * 1.05).toFixed(2)}M/yr.`,
     }
-    if (ratio >= 0.75) return {
+    if (ratio >= 0.7) return {
       type: 'counter',
-      counter: { salary: parseFloat((expected * 1.12).toFixed(1)), years: 2 },
-      msg: `${target.name} feels undervalued. Agent wants €${(expected * 1.12).toFixed(1)}M/yr over 2 years.`,
+      counter: { salary: parseFloat((expected * 1.1).toFixed(2)), years: 2 },
+      msg: `${target.name} feels undervalued. Agent wants €${(expected * 1.1).toFixed(2)}M/yr over 2 years.`,
     }
-    return { type: 'reject', msg: `Offer rejected — too far below expectations.` }
+    return { type: 'reject', msg: `Offer rejected — too far below expectations. ${attemptsLeft - 1} attempt(s) remaining.` }
   }
 
   function sendOffer() {
     if (!canAfford) return
-    const offer = { salary: effectiveSalary, years, signingBonus, clause: selectedClause }
+    const offer = { salary: effectiveSalary, years, signingBonus, clauses: selectedClauses }
     const reaction = getAgentReaction(offer)
     startNegotiation(target.id, type, offer)
     setAgentResponse(reaction)
     setStage('negotiating')
-    if (reaction.type === 'accept') setResult('accepted')
-    else if (reaction.type === 'reject') setResult('rejected')
+    if (reaction.type === 'accept') {
+      setResult('accepted')
+    } else if (reaction.type === 'reject') {
+      const newAttempts = attemptsLeft - 1
+      setAttemptsLeft(newAttempts)
+      if (newAttempts <= 0) setResult('rejected_final')
+      else setResult('rejected')
+    }
+  }
+
+  function tryAgain() {
+    setStage('offer')
+    setAgentResponse(null)
+    setResult(null)
+  }
+
+  function buildTerms() {
+    return {
+      salary: effectiveSalary,
+      years,
+      signingBonus,
+      clauses: selectedClauses,
+      clause: selectedClauses[0],
+      role: riderRole,
+      timing: type === 'renewal' ? 'immediate' : signTiming,
+      replaceRider: type === 'renewal' ? null : replaceRider,
+      type,
+    }
   }
 
   function finalizeAccept() {
-  onSign(target.id, {
-    salary: effectiveSalary,
-    years,
-    signingBonus,
-    clause: selectedClause,
-    role: riderRole,
-    timing: type === 'renewal' ? 'immediate' : signTiming,
-    replaceRider: type === 'renewal' ? null : replaceRider,
-    type: type,
-  })
-  closeNegotiation(target.id)
-  onClose()
-}
-
-function acceptCounter() {
-  const terms = {
-    salary: agentResponse.counter.salary,
-    years: agentResponse.counter.years,
-    signingBonus,
-    clause: selectedClause,
-    role: riderRole,
-    timing: type === 'renewal' ? 'immediate' : signTiming,
-    replaceRider: type === 'renewal' ? null : replaceRider,
-    type: type,
-  }
-  onSign(target.id, terms)
-  closeNegotiation(target.id)
-  onClose()
-}
-
-  function confirmImmediateSign() {
-    onSign(target.id, { salary: effectiveSalary, years, signingBonus, clause: selectedClause, role: riderRole, timing: 'immediate', replaceRider })
+    if (type !== 'renewal' && signTiming === 'immediate' && !isFreeAgent) {
+      setShowReplaceWarning(true)
+      return
+    }
+    onSign(target.id, buildTerms())
     closeNegotiation(target.id)
     onClose()
   }
 
+  function acceptCounter() {
+    onSign(target.id, {
+      salary: agentResponse.counter.salary,
+      years: agentResponse.counter.years,
+      signingBonus,
+      clauses: selectedClauses,
+      clause: selectedClauses[0],
+      role: riderRole,
+      timing: type === 'renewal' ? 'immediate' : signTiming,
+      replaceRider: type === 'renewal' ? null : replaceRider,
+      type,
+    })
+    closeNegotiation(target.id)
+    onClose()
+  }
+
+  function confirmImmediateSign() {
+    onSign(target.id, { ...buildTerms(), timing: 'immediate' })
+    closeNegotiation(target.id)
+    onClose()
+  }
+
+  const salaryColor = effectiveSalary >= (target.salary || 1) * 1.1 ? 'text-green-400' :
+    effectiveSalary >= (target.salary || 1) * 0.9 ? 'text-yellow-400' : 'text-red-400'
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
 
         <div className="px-6 py-5 border-b border-gray-800 flex items-center justify-between sticky top-0 bg-gray-900 z-10">
           <div>
@@ -244,68 +309,70 @@ function acceptCounter() {
             <div className="flex-1">
               <div className="text-base font-semibold text-white">{target.name}</div>
               <div className="text-sm text-gray-500">{target.nationality}</div>
-              {isFreeAgent && (
-                <span className="text-xs bg-green-900 text-green-300 px-2 py-0.5 rounded border border-green-700 mt-1 inline-block">
-                  Free Agent
-                </span>
-              )}
             </div>
             <div className="text-right">
-              <div className="text-sm text-gray-500">Asking</div>
-              <div className="text-base font-semibold text-yellow-400">€{target.salary ?? 0}M/yr</div>
+              <div className="text-sm text-gray-500">Current/Asking</div>
+              <div className="text-base font-semibold text-yellow-400">€{target.salary}M/yr</div>
             </div>
           </div>
 
           {stage === 'offer' && (
             <>
               <div>
-                <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Contract Type</div>
-                <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-                  {availableClauses.map(clause => (
-                    <div
-                      key={clause.id}
-                      onClick={() => setSelectedClause(clause.id)}
-                      className={`border rounded-xl p-3 cursor-pointer transition-all ${
-                        selectedClause === clause.id
-                          ? clause.color + ' ring-1 ring-red-500'
-                          : 'border-gray-800 bg-gray-900 hover:border-gray-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-base">{clause.icon}</span>
-                        <span className="text-sm font-semibold text-white">{clause.label}</span>
-                      </div>
-                      <div className="text-xs text-gray-500 leading-relaxed">{clause.effect}</div>
-                    </div>
-                  ))}
+                <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  Contract Type <span className="text-gray-600 normal-case font-normal">(hover for details, multiple allowed)</span>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableClauses.map(clause => {
+                    const active = selectedClauses.includes(clause.id)
+                    return (
+                      <Tooltip key={clause.id} text={`${clause.desc} — ${clause.effect}`}>
+                        <button
+                          onClick={() => toggleClause(clause.id)}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                            active
+                              ? 'bg-red-600 border-red-500 text-white'
+                              : 'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-500 hover:text-white'
+                          }`}
+                        >
+                          {clause.icon} {clause.label}
+                        </button>
+                      </Tooltip>
+                    )
+                  })}
+                </div>
+                {clauseModifier !== 1.0 && (
+                  <div className="text-xs text-amber-400 mt-2">
+                    Combined clause effect: {clauseModifier > 1
+                      ? `+${Math.round((clauseModifier - 1) * 100)}% salary`
+                      : `-${Math.round((1 - clauseModifier) * 100)}% salary`}
+                  </div>
+                )}
               </div>
 
               {type !== 'staff' && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Rider Role</div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Rider Role</div>
+                  <div className="flex gap-2">
                     {[
-                      { id: 'first', label: '#1 Rider', desc: 'Priority bike development, first call on strategy', modifier: '+15% salary' },
-                      { id: 'equal', label: 'Equal Status', desc: 'Both riders treated equally', modifier: 'Standard' },
-                      { id: 'second', label: '#2 Rider', desc: 'Supports #1 rider when needed', modifier: '-15% salary' },
+                      { id: 'first', label: '#1 Rider', modifier: '+15%', color: 'text-red-400' },
+                      { id: 'equal', label: 'Equal Status', modifier: 'Standard', color: 'text-gray-400' },
+                      { id: 'second', label: '#2 Rider', modifier: '-15%', color: 'text-green-400' },
                     ].map(role => (
-                      <div
+                      <button
                         key={role.id}
                         onClick={() => setRiderRole(role.id)}
-                        className={`border rounded-xl p-3 cursor-pointer transition-all ${
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
                           riderRole === role.id
-                            ? 'border-red-600 bg-red-950 bg-opacity-30'
-                            : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+                            ? 'bg-red-600 border-red-500 text-white'
+                            : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
                         }`}
                       >
-                        <div className="text-sm font-semibold text-white mb-1">{role.label}</div>
-                        <div className="text-xs text-gray-500 leading-relaxed mb-1">{role.desc}</div>
-                        <div className={`text-xs font-medium ${
-                          role.id === 'first' ? 'text-red-400' :
-                          role.id === 'second' ? 'text-green-400' : 'text-gray-400'
-                        }`}>{role.modifier}</div>
-                      </div>
+                        {role.label}
+                        <div className={`text-xs mt-0.5 ${riderRole === role.id ? 'text-red-200' : role.color}`}>
+                          {role.modifier}
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -313,38 +380,28 @@ function acceptCounter() {
 
               {type === 'new' && riders.length >= 2 && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Replace Rider</div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Replace Rider</div>
+                  <div className="flex gap-2">
                     {riders.map(r => {
                       const seatTaken = (pendingContracts || []).some(
                         p => p.terms?.replaceRider === r.id || p.riderId === r.id
                       )
                       return (
-                        <div
+                        <button
                           key={r.id}
                           onClick={() => !seatTaken && setReplaceRider(r.id)}
-                          className={`border rounded-xl p-3 transition-all ${
-                            seatTaken
-                              ? 'border-gray-800 bg-gray-800 opacity-40 cursor-not-allowed'
-                              : replaceRider === r.id
-                              ? 'border-red-600 bg-red-950 bg-opacity-30 cursor-pointer'
-                              : 'border-gray-800 bg-gray-900 hover:border-gray-700 cursor-pointer'
+                          disabled={seatTaken}
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                            seatTaken ? 'bg-gray-800 border-gray-800 text-gray-600 cursor-not-allowed opacity-40' :
+                            replaceRider === r.id ? 'bg-red-600 border-red-500 text-white' :
+                            'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
                           }`}
                         >
-                          <div className="text-sm font-semibold text-white">#{r.number} {r.name}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">
-                            {r.contractYears} yr · €{r.salary}M/yr
+                          #{r.number} {r.name}
+                          <div className="text-xs mt-0.5 opacity-70">
+                            {seatTaken ? 'Seat filled' : `${r.contractYears}yr · €${r.salary}M`}
                           </div>
-                          {seatTaken ? (
-                            <div className="text-xs text-gray-600 mt-1 font-medium">Seat already filled</div>
-                          ) : (
-                            <div className={`text-xs mt-1 font-medium ${
-                              r.contractYears <= 1 ? 'text-red-400' : 'text-yellow-400'
-                            }`}>
-                              {r.contractYears <= 1 ? 'Expiring' : 'Contract active'}
-                            </div>
-                          )}
-                        </div>
+                        </button>
                       )
                     })}
                   </div>
@@ -353,62 +410,66 @@ function acceptCounter() {
 
               {type === 'new' && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">When to Join</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div
+                  <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">When to Join</div>
+                  <div className="flex gap-2">
+                    <button
                       onClick={() => isFreeAgent && setSignTiming('immediate')}
-                      className={`border rounded-xl p-3 transition-all ${
-                        isFreeAgent
-                          ? signTiming === 'immediate'
-                            ? 'border-red-600 bg-red-950 bg-opacity-30 cursor-pointer'
-                            : 'border-gray-800 bg-gray-900 hover:border-gray-700 cursor-pointer'
-                          : 'border-gray-800 bg-gray-800 opacity-40 cursor-not-allowed'
+                      disabled={!isFreeAgent}
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                        !isFreeAgent ? 'opacity-40 cursor-not-allowed bg-gray-800 border-gray-700 text-gray-500' :
+                        signTiming === 'immediate' ? 'bg-red-600 border-red-500 text-white' :
+                        'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
                       }`}
                     >
-                      <div className="text-sm font-semibold text-white mb-1">Sign Immediately</div>
-                      <div className="text-xs text-gray-500 leading-relaxed">
-                        Rider joins now. Current rider's contract terminated early.
-                      </div>
-                      {!isFreeAgent && (
-                        <div className="text-xs text-gray-600 mt-1 italic">Free agents only</div>
-                      )}
-                    </div>
-                    <div
+                      Immediate
+                      <div className="text-xs mt-0.5 opacity-70">{isFreeAgent ? 'Free agents only' : 'Not available'}</div>
+                    </button>
+                    <button
                       onClick={() => setSignTiming('next_season')}
-                      className={`border rounded-xl p-3 cursor-pointer transition-all ${
-                        signTiming === 'next_season'
-                          ? 'border-red-600 bg-red-950 bg-opacity-30'
-                          : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                        signTiming === 'next_season' ? 'bg-red-600 border-red-500 text-white' :
+                        'bg-gray-800 border-gray-700 text-gray-300 hover:border-gray-600'
                       }`}
                     >
-                      <div className="text-sm font-semibold text-white mb-1">Next Season</div>
-                      <div className="text-xs text-gray-500 leading-relaxed">
-                        Rider joins after current contract expires. Safer, no penalties.
-                      </div>
-                    </div>
+                      Next Season
+                      <div className="text-xs mt-0.5 opacity-70">Safer, no penalties</div>
+                    </button>
                   </div>
                 </div>
               )}
 
               <div>
                 <div className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Terms</div>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-400 mb-2">
-                      <span>Base salary</span>
-                      <span className={effectiveSalary >= (target.salary || 1) * 1.1 ? 'text-green-400' : effectiveSalary >= (target.salary || 1) * 0.9 ? 'text-yellow-400' : 'text-red-400'}>
-                        €{salary}M → €{effectiveSalary}M effective
+                <div className="space-y-3">
+
+                  <div className="bg-gray-800 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm text-gray-400">Base salary (€M/yr)</label>
+                      <span className={`text-sm font-semibold ${salaryColor}`}>
+                        Effective: €{effectiveSalary}M/yr
                       </span>
                     </div>
-                    <input
-                      type="range"
-                      min={parseFloat(((target.salary || 1) * 0.5).toFixed(1))}
-                      max={parseFloat(((target.salary || 1) * 2.5).toFixed(1))}
-                      step={0.1}
-                      value={salary}
-                      onChange={e => setSalary(parseFloat(e.target.value))}
-                      className="w-full accent-red-500"
-                    />
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => { const v = Math.max(0.1, parseFloat((salary - 0.1).toFixed(1))); setSalary(v); setSalaryInput(String(v)) }}
+                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center font-bold"
+                      >−</button>
+                      <input
+                        type="number"
+                        value={salaryInput}
+                        onChange={e => handleSalaryInput(e.target.value)}
+                        step="0.1"
+                        min="0.1"
+                        className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-base text-center focus:outline-none focus:border-red-500"
+                      />
+                      <button
+                        onClick={() => { const v = parseFloat((salary + 0.1).toFixed(1)); setSalary(v); setSalaryInput(String(v)) }}
+                        className="w-8 h-8 rounded-lg bg-gray-700 hover:bg-gray-600 text-white flex items-center justify-center font-bold"
+                      >+</button>
+                    </div>
+                    <div className="text-xs text-gray-600 mt-1 text-center">
+                      Rider expects ~€{target.salary}M/yr
+                    </div>
                   </div>
 
                   <div>
@@ -437,10 +498,14 @@ function acceptCounter() {
                     </div>
                   </div>
 
-                  <div className={`rounded-xl p-4 flex items-center justify-between ${!canAfford ? 'bg-red-950 border border-red-800' : 'bg-gray-800'}`}>
+                  <div className={`rounded-xl p-4 flex items-center justify-between ${
+                    !canAfford ? 'bg-red-950 border border-red-800' : 'bg-gray-800'
+                  }`}>
                     <div>
                       <div className="text-sm text-gray-400">Total commitment</div>
-                      <div className="text-xs text-gray-600 mt-0.5">€{effectiveSalary}M × {years}yr + €{signingBonus}M bonus</div>
+                      <div className="text-xs text-gray-600 mt-0.5">
+                        €{effectiveSalary}M × {years}yr + €{signingBonus}M bonus
+                      </div>
                     </div>
                     <div className={`text-lg font-bold ${canAfford ? 'text-white' : 'text-red-400'}`}>
                       €{totalCost.toFixed(1)}M
@@ -449,6 +514,12 @@ function acceptCounter() {
                   </div>
                 </div>
               </div>
+
+              {attemptsLeft < 3 && (
+                <div className="text-sm text-amber-400">
+                  ⚠ {attemptsLeft} offer attempt{attemptsLeft !== 1 ? 's' : ''} remaining
+                </div>
+              )}
 
               <button
                 onClick={sendOffer}
@@ -476,32 +547,50 @@ function acceptCounter() {
                 <div className={`text-sm ${
                   agentResponse.type === 'accept' ? 'text-green-300' :
                   agentResponse.type === 'reject' ? 'text-red-300' : 'text-amber-300'
-                }`}>{agentResponse.msg}</div>
+                }`}>
+                  {agentResponse.msg}
+                </div>
                 {agentResponse.counter && (
-                  <div className="mt-2 text-sm text-amber-400">
-                    €{agentResponse.counter.salary}M/yr × {agentResponse.counter.years} yr
+                  <div className="mt-2 text-sm text-amber-400 font-medium">
+                    Counter: €{agentResponse.counter.salary}M/yr × {agentResponse.counter.years} yr
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-wrap">
                 {result === 'accepted' && (
-                  <button onClick={finalizeAccept} className="flex-1 py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white text-base font-semibold transition-colors">
+                  <button onClick={finalizeAccept}
+                    className="flex-1 py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white text-base font-semibold transition-colors">
                     ✓ Confirm & Sign
                   </button>
                 )}
-                {result === 'rejected' && (
-                  <button onClick={() => { closeNegotiation(target.id); onClose() }} className="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 text-base transition-colors">
-                    Walk Away
+                {result === 'rejected' && attemptsLeft > 0 && (
+                  <button onClick={tryAgain}
+                    className="flex-1 py-3 rounded-xl bg-amber-700 hover:bg-amber-600 text-white text-base font-semibold transition-colors">
+                    Make New Offer ({attemptsLeft} left)
                   </button>
+                )}
+                {result === 'rejected_final' && (
+                  <div className="flex-1 py-3 text-center text-red-400 text-base">
+                    No more attempts — negotiation failed
+                  </div>
                 )}
                 {agentResponse.type === 'counter' && !result && (
                   <>
-                    <button onClick={acceptCounter} className="flex-1 py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white text-base font-semibold transition-colors">Accept Counter</button>
-                    <button onClick={() => { setStage('offer'); setAgentResponse(null) }} className="flex-1 py-3 rounded-xl bg-amber-700 hover:bg-amber-600 text-white text-base font-semibold transition-colors">Counter Again</button>
-                    <button onClick={() => { closeNegotiation(target.id); onClose() }} className="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 text-base transition-colors">Walk Away</button>
+                    <button onClick={acceptCounter}
+                      className="flex-1 py-3 rounded-xl bg-green-700 hover:bg-green-600 text-white text-base font-semibold transition-colors">
+                      Accept Counter
+                    </button>
+                    <button onClick={tryAgain}
+                      className="flex-1 py-3 rounded-xl bg-amber-700 hover:bg-amber-600 text-white text-base font-semibold transition-colors">
+                      Counter Again ({attemptsLeft} left)
+                    </button>
                   </>
                 )}
+                <button onClick={() => { closeNegotiation(target.id); onClose() }}
+                  className="flex-1 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 text-base transition-colors">
+                  Walk Away
+                </button>
               </div>
             </div>
           )}
@@ -510,20 +599,19 @@ function acceptCounter() {
       </div>
 
       {showReplaceWarning && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-[60] p-6">
           <div className="bg-gray-900 border border-red-700 rounded-2xl w-full max-w-sm p-6">
             <div className="text-lg font-semibold text-white mb-2">⚠ Early Termination</div>
-            <div className="text-base text-gray-400 mb-2">
-              {riders.find(r => r.id === replaceRider)?.name} will have their contract terminated immediately.
-            </div>
-            <div className="text-sm text-red-400 mb-5">
-              You may owe a termination fee. This cannot be undone.
+            <div className="text-base text-gray-400 mb-5">
+              {riders.find(r => r.id === replaceRider)?.name}'s contract will be terminated immediately.
             </div>
             <div className="flex gap-3">
-              <button onClick={confirmImmediateSign} className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-base font-semibold transition-colors">
+              <button onClick={confirmImmediateSign}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-base font-semibold">
                 Confirm
               </button>
-              <button onClick={() => setShowReplaceWarning(false)} className="flex-1 py-2.5 bg-gray-800 text-white rounded-xl text-base transition-colors">
+              <button onClick={() => setShowReplaceWarning(false)}
+                className="flex-1 py-2.5 bg-gray-800 text-white rounded-xl text-base">
                 Cancel
               </button>
             </div>
@@ -636,10 +724,8 @@ export default function Contracts() {
       {tab === 'roster' && (
         <div className="space-y-4">
           {riders.map(rider => {
-            const hasNeg = negotiations[rider.id]
-            const isPendingRenewal = (pendingContracts || []).some(
-              p => p.riderId === rider.id && p.terms?.type === 'renewal'
-            )
+            const hasActiveNeg = !!negotiations[rider.id]
+            const renewalDone = !hasActiveNeg && rider.contractYears > 1
 
             const attrs = [
               { label: 'Quali Pace', value: rider.qualiPace ?? rider.pace },
@@ -675,9 +761,7 @@ export default function Contracts() {
                       <div>
                         <div className="text-base font-semibold text-white">{rider.flag} {rider.name}</div>
                         <div className="text-sm text-gray-500">{rider.nationality} · {rider.tier}</div>
-                        {risk && (
-                          <div className={`text-sm font-medium mt-0.5 ${risk.color}`}>{risk.text} style</div>
-                        )}
+                        {risk && <div className={`text-sm font-medium mt-0.5 ${risk.color}`}>{risk.text} style</div>}
                       </div>
                       <div className="text-right">
                         <div className="text-base font-semibold text-white">€{rider.salary}M/yr</div>
@@ -707,17 +791,18 @@ export default function Contracts() {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => openNegotiation({ ...rider, negotiationType: 'renewal' }, 'renewal')}
-                    disabled={isPendingRenewal}
+                    onClick={() => !renewalDone && openNegotiation(rider, 'renewal')}
+                    disabled={renewalDone}
                     className={`flex-1 py-2.5 rounded-xl text-base font-semibold transition-colors ${
-                      isPendingRenewal
+                      renewalDone
                         ? 'bg-green-900 border border-green-700 text-green-400 cursor-not-allowed'
-                        : hasNeg
-                        ? 'bg-amber-900 border border-amber-700 text-amber-300'
+                        : hasActiveNeg
+                        ? 'bg-amber-900 border border-amber-700 text-amber-300 hover:bg-amber-800'
                         : 'bg-gray-800 hover:bg-gray-700 text-white border border-gray-700'
                     }`}
                   >
-                    {isPendingRenewal ? '✓ Renewal Agreed' : hasNeg ? 'In Negotiation' : 'Negotiate Renewal'}
+                    {renewalDone ? '✓ Contract Renewed' :
+                    hasActiveNeg ? 'Resume Negotiation' : 'Negotiate Renewal'}
                   </button>
                   <button
                     onClick={() => setConfirmRelease(rider)}

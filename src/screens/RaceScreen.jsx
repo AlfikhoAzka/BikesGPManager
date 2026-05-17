@@ -88,20 +88,6 @@ function buildConstructorStandings(raceResults, existingResults) {
     .slice(0, 10)
 }
 
-const AI_NAMES = [
-  { name: 'M. Marquez', pace: 20 }, { name: 'F. Bagnaia', pace: 19 },
-  { name: 'J. Martin', pace: 18 }, { name: 'M. Bezzecchi', pace: 18 },
-  { name: 'P. Acosta', pace: 18 }, { name: 'F. Quartararo', pace: 17 },
-  { name: 'A. Marquez', pace: 17 }, { name: 'T. Razgatlioglu', pace: 17 },
-  { name: 'B. Binder', pace: 16 }, { name: 'M. Vinales', pace: 16 },
-  { name: 'E. Bastianini', pace: 16 }, { name: 'F. Di Giannantonio', pace: 16 },
-  { name: 'R. Fernandez', pace: 15 }, { name: 'A. Ogura', pace: 15 },
-  { name: 'J. Zarco', pace: 15 }, { name: 'L. Marini', pace: 15 },
-  { name: 'J. Mir', pace: 15 }, { name: 'A. Rins', pace: 15 },
-  { name: 'F. Morbidelli', pace: 15 }, { name: 'J. Miller', pace: 14 },
-  { name: 'F. Aldeguer', pace: 14 }, { name: 'D. Moreira', pace: 13 },
-]
-
 export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) {
   const {
     riders, bike, staff, team, round,
@@ -597,7 +583,7 @@ export default function RaceScreen({ phase: initialPhase = 'fp1', onFinished }) 
                   <span className="col-span-9">Rider</span>
                   <span className="col-span-2">Pts</span>
                 </div>
-                {buildStandings(raceResults, existingResults, team.name || []).map((r, i) => (
+                {buildStandings(raceResults, allRaceResults, existingResults, team.name || []).map((r, i) => (
                   <div key={r.name} className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-gray-800 last:border-0 text-sm ${
                     riders.find(pr => pr.name === r.name) ? 'bg-red-950 bg-opacity-30' : ''
                   }`}>
